@@ -1,0 +1,9 @@
+{
+  "featureId": "F003",
+  "score": 1,
+  "passedAdversarial": true,
+  "hasHighCriticalVuln": false,
+  "isCrashing": false,
+  "vulnerabilities": [],
+  "edgeCasesMissed": []
+}

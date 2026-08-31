@@ -1,0 +1,44 @@
+{
+    "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+    "name": "harness-kit",
+    "description": "Expert AI agents (Architect, Backend, Frontend, Adversarial QA, Tech Lead, Debugger) and skills (Autonomous Orchestrator, TDD Orchestrator, Scope Refinement, Grumpy Tech Lead, Project Memory) implementing Harness Engineering for autonomous, disciplined software development.",
+    "owner": {
+        "name": "Romario Beckman",
+        "url": "https://github.com/lfernandoss"
+    },
+    "plugins": [
+        {
+            "name": "harness-kit",
+            "source": "./",
+            "version": "1.3.10",
+            "description": "Expert AI agents (Architect, Backend, Frontend, QA, Code Reviewer, Debugger) and skills (TDD Orchestrator, Scope Refinement, Grumpy Tech Lead, Project Memory) implementing Harness Engineering for disciplined software development.",
+            "author": {
+                "name": "Romario Beckman",
+                "url": "https://github.com/lfernandoss"
+            },
+            "homepage": "https://github.com/lfernandoss/harness-kit",
+            "repository": "https://github.com/lfernandoss/harness-kit",
+            "license": "MIT",
+            "category": "productivity",
+            "keywords": [
+                "agents",
+                "tdd",
+                "ddd",
+                "code-review",
+                "software-engineering",
+                "harness",
+                "ai-workflow",
+                "autonomous",
+                "orchestrator"
+            ],
+            "tags": [
+                "tdd",
+                "ddd",
+                "agents",
+                "code-review",
+                "autonomous-orchestrator",
+                "harness-engineering"
+            ]
+        }
+    ]
+}

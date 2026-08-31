@@ -1,0 +1,11 @@
+{
+  "name": "@lfernandoss/hrns-web",
+  "version": "0.6.1",
+  "description": "Web shell and host for harness-kit autonomous TDD orchestration",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

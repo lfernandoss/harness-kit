@@ -1,0 +1,379 @@
+import { join } from 'path'
+import { Phase } from './types'
+import type { OrchestratorConfig, OrchestratorState, OnDiskState } from './types'
+import { ReentryResolver } from './ReentryResolver'
+import { FileStateManager } from '../file-state/FileStateManager'
+import type { IFileStateManager } from '../file-state/FileStateManager'
+import { HarnessSettings } from '../settings/HarnessSettings'
+import type { Feature } from '../file-state/types'
+import { AgentRunnerFactory } from '../agent-runner/AgentRunnerFactory'
+import { AgentRunnerError, AgentRunnerErrorCode } from '../agent-runner/AgentRunnerError'
+import { TokenLedger } from '../telemetry/TokenLedger'
+import { JsonlSessionLedger } from '../diagnose/JsonlSessionLedger'
+import { AnsiHelpers } from '../ui/AnsiHelpers'
+import {
+  IPhaseHandler,
+  Reviewontext,
+  ExtractedTask,
+  DeveloperSessionState
+} from './phases'
+import { ChainBuilder } from './ChainBuilder'
+import { OrchestratorFormatter } from './utils/OrchestratorFormatter'
+import { ProjectStateService } from './services/ProjectStateService'
+import { AgentInvocationService } from './services/AgentInvocationService'
+import { SteeringService } from './services/SteeringService'
+import { exit } from 'process'
+import { AgentInvocation, AgentOutput, AgentSession, Runner } from '../agent-runner/types'
+import { SteeringAction } from './SteeringAnalyzer'
+import { IAgentRunner } from '../agent-runner/IAgentRunner'
+
+export interface HarnessOrchestratorOptions {
+  workingDir?: string
+}
+
+export class HarnessOrchestrator implements Reviewontext {
+  readonly config: OrchestratorConfig
+  readonly workingDir: string
+  readonly fsm: IFileStateManager
+  developerSession?: DeveloperSessionState[]
+  activeSessionId?: string
+  state: OrchestratorState
+  private readonly agentRunner: IAgentRunner
+  private readonly ledger: TokenLedger
+  private readonly chain: IPhaseHandler
+  private readonly settings: HarnessSettings
+  private readonly projectStateService: ProjectStateService
+  private readonly agentInvocationService: AgentInvocationService
+  private readonly steeringService: SteeringService
+
+  constructor(config: OrchestratorConfig, options: HarnessOrchestratorOptions = {}) {
+    this.agentRunner = config.agentRunner
+      ?? (process.env.ANTHROPIC_API_KEY
+        ? AgentRunnerFactory.create({ type: Runner.CLAUDE_SDK })
+        : AgentRunnerFactory.create({ type: Runner.CLAUDE_CLI }))
+    this.config = config
+    this.workingDir = options.workingDir ?? process.cwd()
+    this.settings = config.settings ?? HarnessSettings.load(this.workingDir)
+    const productDir = config.productDir ?? join(this.workingDir, 'docs', 'product')
+    this.fsm = new FileStateManager({
+      productDir,
+      workingDir: this.workingDir,
+    })
+
+    this.projectStateService = new ProjectStateService(this.workingDir)
+    this.ledger = new TokenLedger(join(productDir, 'tokens.jsonl'))
+    const diagnoseLedger = new JsonlSessionLedger(join(productDir, 'diagnose-sessions.jsonl'))
+    this.agentInvocationService = new AgentInvocationService(this.agentRunner, this.ledger, diagnoseLedger)
+
+    // When user resumes execution, we need to use the same scope as the original execution
+    this.ensureConfig()
+
+    // Determine initial phase via re-entry resolver
+    const onDisk = this.readOnDiskState()
+    const entryPhase = this.config.action === 'reset' ? Phase.BOOTSTRAP : ReentryResolver.resolve(onDisk)
+    if (this.config.action !== 'reset' && onDisk.config && (onDisk.config as any).activeSessionId) {
+      this.activeSessionId = (onDisk.config as any).activeSessionId
+    }
+    this.state = {
+      currentPhase: entryPhase,
+      activeFeatureId: this.config.action === 'reset' ? null : (onDisk.config?.activeFeatureId ?? onDisk.activeFeature?.id ?? null),
+      completedCycles: this.config.action === 'reset' ? 0 : (onDisk.config?.cycleCounter.completedCycles ?? 0),
+    }
+
+    this.steeringService = new SteeringService(this.fsm, this.state)
+    this.chain = config.chain ?? ChainBuilder.buildDefault()
+  }
+
+  getState(): OrchestratorState {
+    return { ...this.state }
+  }
+
+  tokenReport(): void {
+    this.ledger.printReport()
+  }
+
+  // ─── Public run loop ──────────────────────────────────────────────────────
+
+  async run(): Promise<void> {
+    const MAX_ITERATIONS = 500 // guard against infinite loops
+    const MAX_PHASE_ITERATIONS = 3
+    let iterations = 0
+    let consecutivePhaseIterations = 0
+    let lastPrintedPhase: Phase | null = null
+    let lastPhaseTracker: Phase | null = null
+
+    const shouldContinuePrompt = async (message: string): Promise<boolean> => {
+      const isInteractive = process.stdout.isTTY && process.stdin.isTTY && process.env.NODE_ENV !== 'test'
+      if (!isInteractive) {
+        return false
+      }
+      try {
+        const { confirm } = await import('@inquirer/prompts')
+        return await confirm({
+          message,
+          default: true
+        })
+      } catch {
+        return false
+      }
+    }
+
+    while (this.state.currentPhase !== Phase.HALTED) {
+      if (++iterations > MAX_ITERATIONS) {
+        const message = `HarnessOrchestrator: exceeded ${MAX_ITERATIONS} iterations — possible infinite loop at phase ${this.state.currentPhase}. Do you want to continue anyway?`
+        if (await shouldContinuePrompt(message)) {
+          iterations = 0
+        } else {
+          throw new Error(`HarnessOrchestrator: exceeded ${MAX_ITERATIONS} iterations — possible infinite loop at phase ${this.state.currentPhase}`)
+        }
+      }
+
+      if (this.state.currentPhase === lastPhaseTracker) {
+        consecutivePhaseIterations++
+      } else {
+        consecutivePhaseIterations = 0
+        lastPhaseTracker = this.state.currentPhase
+      }
+
+      if (consecutivePhaseIterations > MAX_PHASE_ITERATIONS) {
+        const message = `HarnessOrchestrator: exceeded consecutive iteration limit of ${MAX_PHASE_ITERATIONS} at phase ${this.state.currentPhase} — possible infinite loop. Do you want to continue anyway?`
+        if (await shouldContinuePrompt(message)) {
+          consecutivePhaseIterations = 0
+        } else {
+          throw new Error(`HarnessOrchestrator: exceeded consecutive iteration limit of ${MAX_PHASE_ITERATIONS} at phase ${this.state.currentPhase} — possible infinite loop.`)
+        }
+      }
+
+      if (this.state.currentPhase !== lastPrintedPhase) {
+        OrchestratorFormatter.printPipelineHeader(this.state.currentPhase)
+        lastPrintedPhase = this.state.currentPhase
+      }
+
+      // Persist current phase before executing
+      this.persistPhase()
+
+      const phaseStartTime = Date.now()
+      let next: Phase
+      try {
+        next = await this.dispatch(this.state.currentPhase)
+      } catch (err: any) {
+        const errorMsg = err instanceof Error ? err.message : String(err)
+        this.config.onLog?.(`\n[PIPELINE ERROR] ❌ Erro na fase ${this.state.currentPhase}: ${errorMsg}\n`)
+        if (
+          err instanceof AgentRunnerError &&
+          (err.code === AgentRunnerErrorCode.QUOTA_EXCEEDED || err.code === AgentRunnerErrorCode.TIMEOUT)
+        ) {
+          process.stderr.write(
+            `\n${AnsiHelpers.yellow('⚠')} ${AnsiHelpers.dim(
+              err.code === AgentRunnerErrorCode.TIMEOUT
+                ? 'Agent timed out / aborted by user.'
+                : 'Quota / rate-limit reached.'
+            )} ` +
+            `Phase ${AnsiHelpers.cyan(this.state.currentPhase)} persisted.\n` +
+            `  Resume: ${AnsiHelpers.dim('hrns run')} → select "resume"\n\n`
+          )
+          this.state = { ...this.state, currentPhase: Phase.HALTED }
+          return
+        }
+        if (err instanceof AgentRunnerError) {
+          process.stderr.write(`\n${AnsiHelpers.red('✗')} Agent error [${err.code}]: ${err.message}\n\n`)
+        }
+        throw err
+      }
+
+      const elapsedMs = Date.now() - phaseStartTime
+      const durationStr = OrchestratorFormatter.formatDuration(elapsedMs)
+
+      try {
+        const updatedConfig = this.fsm.loadBootstrapConfig()
+        this.state.activeFeatureId = updatedConfig.activeFeatureId ?? null
+      } catch {
+        // ignore
+      }
+
+      if (next !== this.state.currentPhase) {
+        console.log(`\n${AnsiHelpers.green('✔')} ${AnsiHelpers.cyan(this.state.currentPhase)} completed in ${AnsiHelpers.yellow(durationStr)}`)
+        console.log(`${AnsiHelpers.blue('⟳')} ${AnsiHelpers.dim('Transitioning to:')} ${AnsiHelpers.cyan(next)}`)
+        this.config.onPhaseChange?.(next)
+        this.config.onLog?.(`[PIPELINE] ✔ Fase ${this.state.currentPhase} concluída (${durationStr}). ➔ Iniciando: ${next}`)
+      }
+      this.state = { ...this.state, currentPhase: next }
+    }
+  }
+
+  /**
+   * Run only BOOTSTRAP phase (for tests).
+   */
+  async runBootstrapOnly(): Promise<void> {
+    if (this.state.currentPhase === Phase.BOOTSTRAP) {
+      await this.chain.handle(Phase.BOOTSTRAP, this)
+    }
+  }
+
+  /**
+   * Ensure that the orchestrator has the necessary configuration.
+   * If not, try to load it from the bootstrap config.
+   * If still not defined, exit the program.
+   */
+  private ensureConfig(): void {
+    if (this.config.scope && this.config.scope.trim()) {
+      this.fsm.saveScope(this.config.scope)
+    } else if (this.fsm.existScope()) {
+      this.config.scope = this.fsm.loadScope()
+    }
+
+    if (!this.config.scope) {
+      process.stderr.write(`\n\n${AnsiHelpers.red(`✗ [Error] Scope is not defined`)}\n\n`)
+      exit(1)
+    }
+
+    if (!this.config.projectPaths || this.config.projectPaths.length === 0) {
+      const bootConfig = this.fsm.loadBootstrapConfig()
+      if (!bootConfig.projectPaths || bootConfig.projectPaths.length === 0) {
+        process.stderr.write(`\n\n${AnsiHelpers.red(`✗ [Error] Project paths are not defined`)}\n\n`)
+        exit(1)
+      }
+      this.config.projectPaths = bootConfig.projectPaths
+    }
+  }
+
+  // ─── Phase dispatch ───────────────────────────────────────────────────────
+
+  private async dispatch(phase: Phase): Promise<Phase> {
+    const next = await this.chain.handle(phase, this)
+    if (next === null) {
+      throw new Error(`Unhandled phase: ${phase}`)
+    }
+    return next
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  public updateState(state: Partial<OrchestratorState>): void {
+    this.state = { ...this.state, ...state }
+  }
+
+
+  public applySteeringActions(actions: SteeringAction[]): void {
+    this.steeringService.applySteeringActions(actions)
+  }
+
+  public getDeveloperSession(agent: string, featureId?: string, phase?: Phase): AgentSession | undefined {
+    if (!this.developerSession) return undefined
+    if (Array.isArray(this.developerSession)) {
+      return this.developerSession.find(
+        s => s.agent === agent && (!featureId || s.featureId === featureId) && (!phase || s.phase === phase)
+      )?.session
+    }
+    const session = this.developerSession as DeveloperSessionState
+    if (session.agent === agent && (!featureId || session.featureId === featureId) && (!phase || session.phase === phase)) {
+      return session.session
+    }
+    return undefined
+  }
+
+  public setDeveloperSession(sessionState: DeveloperSessionState): void {
+    if (!this.developerSession) {
+      this.developerSession = [sessionState]
+      return
+    }
+    if (Array.isArray(this.developerSession)) {
+      const idx = this.developerSession.findIndex(
+        s => s.agent === sessionState.agent && s.featureId === sessionState.featureId && s.phase === sessionState.phase
+      )
+      if (idx >= 0) {
+        this.developerSession[idx] = sessionState
+      } else {
+        this.developerSession.push(sessionState)
+      }
+    } else {
+      const existing = this.developerSession as DeveloperSessionState
+      if (existing.agent === sessionState.agent && existing.featureId === sessionState.featureId && existing.phase === sessionState.phase) {
+        this.developerSession = [sessionState]
+      } else {
+        this.developerSession = [existing, sessionState]
+      }
+    }
+  }
+
+  public async invokeAgent(invocation: AgentInvocation): Promise<AgentOutput> {
+    this.config.onLog?.(`[AGENT] 🤖 Invocando agente para fase ${this.state.currentPhase}...`)
+
+    // Resolve persistent session across all pipeline phases
+    let session = invocation.session
+    if (!session) {
+      session = this.getDeveloperSession(invocation.agent, this.state.activeFeatureId ?? undefined)
+        ?? (this.activeSessionId ? { id: this.activeSessionId } : undefined)
+    }
+
+    const enrichedInvocation: AgentInvocation = {
+      ...invocation,
+      session,
+      onLog: (chunk, stream) => {
+        invocation.onLog?.(chunk, stream)
+        this.config.onLog?.(chunk)
+      },
+    }
+    const result = await this.agentInvocationService.invokeAgent(enrichedInvocation, this.state.currentPhase, this.config, this.settings)
+
+    if (result.session?.id) {
+      this.activeSessionId = result.session.id
+      this.setDeveloperSession({
+        agent: invocation.agent,
+        featureId: this.state.activeFeatureId ?? 'global',
+        phase: this.state.currentPhase,
+        session: result.session,
+      })
+
+      try {
+        if (this.fsm.existBootstrapConfig()) {
+          const bConfig = this.fsm.loadBootstrapConfig()
+          bConfig.activeSessionId = result.session.id
+          this.fsm.saveBootstrapConfig(bConfig)
+        }
+      } catch {}
+    }
+
+    this.config.onLog?.(`[AGENT] ✅ Resposta recebida do agente (Sessão: ${this.activeSessionId || result.session?.id || 'default'}).`)
+    return result
+  }
+
+  public getActiveFeature(): Feature | null {
+    const features = this.fsm.loadBacklog();
+    const config = this.fsm.loadBootstrapConfig();
+
+    if (config.activeFeatureId) {
+      const found = features.find(f => f.id === config.activeFeatureId)
+      if (found) return found
+    }
+    return features.find(f => f.status === 'NOT_STARTED' || f.status === 'IN_PROGRESS') ?? null
+  }
+
+  public checkSpecFilesPresent(domain: string): boolean {
+    return this.projectStateService.checkSpecFilesPresent(domain)
+  }
+
+  public extractTasksFromTacticalDesign(domain: string): ExtractedTask[] {
+    return this.projectStateService.extractTasksFromTacticalDesign(domain)
+  }
+
+  private readOnDiskState(): OnDiskState {
+    const productDir = this.config.productDir ?? join(this.workingDir, 'docs', 'product')
+    return this.projectStateService.readOnDiskState(this.fsm, productDir)
+  }
+
+  private persistPhase(): void {
+    try {
+      const config = this.fsm.loadBootstrapConfig()
+      config.currentPhase = this.state.currentPhase
+      config.activeFeatureId = this.state.activeFeatureId
+      this.fsm.saveBootstrapConfig(config)
+    } catch {
+      // ignore if bootstrap config not yet written
+    }
+  }
+
+  public onFeatureTransition(completed: Feature, next: Feature | null, cycle: number): void {
+    OrchestratorFormatter.onFeatureTransition(completed, next, cycle)
+  }
+}

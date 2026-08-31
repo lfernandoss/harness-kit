@@ -1,0 +1,77 @@
+/* Itaú Unibanco Design Tokens & Semantic Theme Tokens */
+
+:root {
+  /* Itaú Brand Identity Colors */
+  --itau-orange: #EC7000;
+  --itau-navy: #003399;
+  --itau-graphite-dark: #121212;
+  --itau-graphite-light: #F4F5F7;
+
+  /* Semantic Theme Variables - Light Mode (Default) */
+  --color-primary: #EC7000;
+  --color-secondary: #003399;
+  --color-accent: #EC7000;
+
+  --bg-canvas: #F4F5F7;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-header: #FFFFFF;
+
+  --text-primary: #121212;
+  --text-secondary: #5E6C84;
+  --text-muted: #7A869A;
+  --text-on-primary: #121212;
+  --text-on-navy: #FFFFFF;
+
+  --border-default: #DFE1E6;
+  --border-subtle: #EBECF0;
+  --border-focus: #003399;
+
+  --status-connected: #00875A;
+  --status-disconnected: #DE350B;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.2);
+
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-size-base: 16px;
+  --header-height: 60px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+}
+
+[data-theme='dark'] {
+  /* Semantic Theme Variables - Calibrated Dark Mode */
+  --itau-orange: #FF851A;
+  --itau-navy: #4C82FB;
+
+  --color-primary: #FF851A;
+  --color-secondary: #4C82FB;
+  --color-accent: #FF851A;
+
+  /* Calibrated dark mode surface hierarchy */
+  --bg-canvas: #121212;
+  --bg-surface: #1E1E1E;
+  --bg-surface-elevated: #2D2D2D;
+  --bg-sidebar: #1E1E1E;
+  --bg-header: #1E1E1E;
+
+  --text-primary: #F4F5F7;
+  --text-secondary: #A0AEC0;
+  --text-muted: #718096;
+  --text-on-primary: #121212;
+  --text-on-navy: #FFFFFF;
+
+  --border-default: #333333;
+  --border-subtle: #2A2A2A;
+  --border-focus: #4C82FB;
+
+  --status-connected: #36B37E;
+  --status-disconnected: #FF5630;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.7);
+}

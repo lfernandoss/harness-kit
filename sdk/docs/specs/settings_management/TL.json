@@ -1,0 +1,6 @@
+{
+  "featureId": "F004",
+  "score": 0.95,
+  "openPoints": [],
+  "architectureTip": "Encapsulate file-system mutation locks across concurrent HTTP requests to prevent race conditions during atomic file rename operations."
+}
