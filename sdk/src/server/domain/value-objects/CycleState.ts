@@ -1,0 +1,7 @@
+export enum CycleState {
+  INITIALIZED = 'INITIALIZED',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  ABORTED = 'ABORTED',
+}

@@ -1,6 +1,6 @@
 {
-  "featureId": "F001",
-  "score": 1.00,
+  "featureId": "F003",
+  "score": 1.0,
   "passedAdversarial": true,
   "hasHighCriticalVuln": false,
   "isCrashing": false,

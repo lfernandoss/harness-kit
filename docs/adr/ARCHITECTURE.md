@@ -48,8 +48,10 @@ sdk-web/src/                      # Interface Web SPA e servidor host local
 | Orchestrator | Governança da máquina de estados autônoma (Fases A a E, reentrância e reworks) | `sdk/src/orchestrator/` |
 | Validation Gate | Execução de gates de qualidade combinando score de Tech Lead e QA adversário | `sdk/src/validation-gate/` |
 | Server | API HTTP assíncrona para controle de jobs, filas e telemetria de tokens | `sdk/src/server/` |
+| Session & Multi-Cycle Management | Ciclo de vida de sessões, persistência atômica e supervisão de árvores de processos | `sdk/src/server/domain/`, `sdk/src/server/adapters/` |
 | Diagnose & Telemetry | Rastreamento de execução, análise de Pareto e evolução contínua de prompts | `sdk/src/diagnose/` |
 | Web Shell & App (`sdk-web`) | Interface web local com tema Itaú, dashboards e streaming SSE | `sdk-web/src/` |
+| Swimlane Multi-Cycle Dashboard | Visualização temporal em raias paralelas com escala horizontal e drawer de inspeção | `sdk-web/src/views/orchestrator/` |
 
 ## PATTERNS
 <code_patterns>

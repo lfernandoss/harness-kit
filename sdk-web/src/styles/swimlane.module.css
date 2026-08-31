@@ -1,0 +1,80 @@
+.dashboardContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--itau-bg-color, #FFFFFF);
+  color: var(--itau-text-color, #1E1E1E);
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--swimlane-border-color, #E1DFDD);
+}
+
+.canvasWrapper {
+  display: flex;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.sidebarCategories {
+  width: 220px;
+  min-width: 220px;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--itau-bg-color, #FFFFFF);
+  border-right: 1px solid var(--swimlane-border-color, #E1DFDD);
+}
+
+.timelineTracksArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 1200px;
+}
+
+.timeScaleHeader {
+  height: var(--swimlane-header-height, 48px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--swimlane-bg-track-light, #F8F9FA);
+  border-bottom: 1px solid var(--swimlane-border-color, #E1DFDD);
+  display: flex;
+  align-items: center;
+}
+
+.laneTrack {
+  height: var(--swimlane-lane-height, 76px);
+  border-bottom: 1px dashed var(--swimlane-border-color, #E1DFDD);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cycleCard {
+  position: absolute;
+  height: 52px;
+  border-radius: var(--swimlane-card-border-radius, 8px);
+  min-width: var(--swimlane-card-min-width, 48px);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 12px;
+  color: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cycleCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}

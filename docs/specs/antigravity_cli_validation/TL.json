@@ -1,6 +1,0 @@
-{
-  "featureId": "F001",
-  "score": 0.98,
-  "openPoints": [],
-  "architectureTip": "Consider extracting the JSON envelope error normalization logic into a shared helper to ensure uniform status handling across different CLI runner implementations."
-}

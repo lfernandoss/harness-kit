@@ -1,1 +1,311 @@
-{"nodes":[{"id":"adr:architecture","type":"adr","title":"Arquitetura do Projeto","path":"docs/adr/ARCHITECTURE.md","tags":["architecture","design-patterns","folder-structure","agent-runner","sdk-web"]},{"id":"adr:tests","type":"adr","title":"Testing Protocol","path":"docs/adr/TESTS.md","tags":["testing","unit-tests","integration-tests","e2e-tests","coverage","vitest"]},{"id":"feature:antigravity-cli-validation","type":"feature","title":"Antigravity CLI Integration","path":"docs/feature/antigravity-cli-validation.md","tags":["agent-runner","antigravity-cli","agy","process-tree","stdin-delivery"]},{"id":"feature:diagnostics-candidate-review","type":"feature","title":"Diagnostics and Meta-Harness Candidate Review","path":"docs/feature/diagnostics-candidate-review.md","tags":["diagnostics","meta-harness","candidates","batch-processing","prompt-evolution"]},{"id":"feature:e2e-web-validation","type":"feature","title":"End-to-End Web Integration & Automated Verification Suite","path":"docs/feature/e2e-web-validation.md","tags":["e2e-testing","verification","multi-tab","a11y-audit","sandbox"]},{"id":"feature:orchestration-execution","type":"feature","title":"Live Orchestration Execution Dashboard","path":"docs/feature/orchestration-execution.md","tags":["orchestrator","live-dashboard","sse-stream","mid-run-steering","ansi-logs"]},{"id":"feature:settings-management","type":"feature","title":"Settings Management Interface","path":"docs/feature/settings-management.md","tags":["settings","configuration","dual-editor","atomic-writer","precedence"]},{"id":"feature:telemetry-analytics","type":"feature","title":"Telemetry and Token Analytics Dashboard","path":"docs/feature/telemetry-analytics.md","tags":["telemetry","token-analytics","cost-breakdown","cache-savings","audit-trail"]},{"id":"feature:web-shell-theme","type":"feature","title":"Web Server Host and Application Shell","path":"docs/feature/web-shell-theme.md","tags":["web-shell","theme-switcher","itau-tokens","responsive-sidebar","fouc-prevention"]},{"id":"feature:workspace-initialization","type":"feature","title":"Workspace Initialization Wizard","path":"docs/feature/workspace-initialization.md","tags":["workspace-init","wizard","steering-rules","tracking-files","overwrite-guard"]}],"edges":[{"source":"adr:architecture","relation":"references","target":"adr:tests"},{"source":"adr:tests","relation":"references","target":"adr:architecture"},{"source":"feature:antigravity-cli-validation","relation":"implements","target":"adr:architecture"},{"source":"feature:antigravity-cli-validation","relation":"tested_by","target":"adr:tests"},{"source":"feature:diagnostics-candidate-review","relation":"implements","target":"adr:architecture"},{"source":"feature:diagnostics-candidate-review","relation":"tested_by","target":"adr:tests"},{"source":"feature:e2e-web-validation","relation":"implements","target":"adr:architecture"},{"source":"feature:e2e-web-validation","relation":"tested_by","target":"adr:tests"},{"source":"feature:orchestration-execution","relation":"implements","target":"adr:architecture"},{"source":"feature:orchestration-execution","relation":"tested_by","target":"adr:tests"},{"source":"feature:settings-management","relation":"implements","target":"adr:architecture"},{"source":"feature:settings-management","relation":"tested_by","target":"adr:tests"},{"source":"feature:telemetry-analytics","relation":"implements","target":"adr:architecture"},{"source":"feature:telemetry-analytics","relation":"tested_by","target":"adr:tests"},{"source":"feature:web-shell-theme","relation":"implements","target":"adr:architecture"},{"source":"feature:web-shell-theme","relation":"tested_by","target":"adr:tests"},{"source":"feature:workspace-initialization","relation":"implements","target":"adr:architecture"},{"source":"feature:workspace-initialization","relation":"tested_by","target":"adr:tests"}]}
+{
+  "nodes": [
+    {
+      "id": "adr:architecture",
+      "type": "adr",
+      "title": "Arquitetura do Projeto",
+      "path": "docs/adr/ARCHITECTURE.md",
+      "tags": [
+        "architecture",
+        "design-patterns",
+        "folder-structure",
+        "agent-runner",
+        "sdk-web"
+      ]
+    },
+    {
+      "id": "adr:tests",
+      "type": "adr",
+      "title": "Testing Protocol",
+      "path": "docs/adr/TESTS.md",
+      "tags": [
+        "testing",
+        "unit-tests",
+        "integration-tests",
+        "e2e-tests",
+        "coverage",
+        "vitest"
+      ]
+    },
+    {
+      "id": "feature:antigravity-cli-validation",
+      "type": "feature",
+      "title": "Antigravity CLI Integration",
+      "path": "docs/feature/antigravity-cli-validation.md",
+      "tags": [
+        "agent-runner",
+        "antigravity-cli",
+        "agy",
+        "process-tree",
+        "stdin-delivery"
+      ]
+    },
+    {
+      "id": "feature:diagnostics-candidate-review",
+      "type": "feature",
+      "title": "Diagnostics and Meta-Harness Candidate Review",
+      "path": "docs/feature/diagnostics-candidate-review.md",
+      "tags": [
+        "diagnostics",
+        "meta-harness",
+        "candidates",
+        "batch-processing",
+        "prompt-evolution"
+      ]
+    },
+    {
+      "id": "feature:e2e-web-validation",
+      "type": "feature",
+      "title": "End-to-End Web Integration & Automated Verification Suite",
+      "path": "docs/feature/e2e-web-validation.md",
+      "tags": [
+        "e2e-testing",
+        "verification",
+        "multi-tab",
+        "a11y-audit",
+        "sandbox"
+      ]
+    },
+    {
+      "id": "feature:orchestration-execution",
+      "type": "feature",
+      "title": "Live Orchestration Execution Dashboard",
+      "path": "docs/feature/orchestration-execution.md",
+      "tags": [
+        "orchestrator",
+        "live-dashboard",
+        "sse-stream",
+        "mid-run-steering",
+        "ansi-logs"
+      ]
+    },
+    {
+      "id": "feature:settings-management",
+      "type": "feature",
+      "title": "Settings Management Interface",
+      "path": "docs/feature/settings-management.md",
+      "tags": [
+        "settings",
+        "configuration",
+        "dual-editor",
+        "atomic-writer",
+        "precedence"
+      ]
+    },
+    {
+      "id": "feature:telemetry-analytics",
+      "type": "feature",
+      "title": "Telemetry and Token Analytics Dashboard",
+      "path": "docs/feature/telemetry-analytics.md",
+      "tags": [
+        "telemetry",
+        "token-analytics",
+        "cost-breakdown",
+        "cache-savings",
+        "audit-trail"
+      ]
+    },
+    {
+      "id": "feature:web-shell-theme",
+      "type": "feature",
+      "title": "Web Server Host and Application Shell",
+      "path": "docs/feature/web-shell-theme.md",
+      "tags": [
+        "web-shell",
+        "theme-switcher",
+        "itau-tokens",
+        "responsive-sidebar",
+        "fouc-prevention"
+      ]
+    },
+    {
+      "id": "feature:workspace-initialization",
+      "type": "feature",
+      "title": "Workspace Initialization Wizard",
+      "path": "docs/feature/workspace-initialization.md",
+      "tags": [
+        "workspace-init",
+        "wizard",
+        "steering-rules",
+        "tracking-files",
+        "overwrite-guard"
+      ]
+    },
+    {
+      "id": "feature:session-cycle-management",
+      "type": "feature",
+      "title": "Multi-Cycle Session Lifecycle & Persistence",
+      "path": "docs/feature/session-cycle-management.md",
+      "tags": [
+        "session-management",
+        "multi-cycle",
+        "persistence",
+        "process-tree",
+        "sse"
+      ]
+    },
+    {
+      "id": "feature:swimlane-cycle-dashboard",
+      "type": "feature",
+      "title": "Interactive Swimlane Multi-Cycle Dashboard",
+      "path": "docs/feature/swimlane-cycle-dashboard.md",
+      "tags": [
+        "swimlanes",
+        "timeline",
+        "dashboard",
+        "sse-stream",
+        "ui-controls"
+      ]
+    },
+    {
+      "id": "feature:multi-cycle-verification",
+      "type": "feature",
+      "title": "Multi-Cycle Orchestration & Session Reuse Automated Verification Suite",
+      "path": "docs/feature/multi-cycle-verification.md",
+      "tags": [
+        "e2e-testing",
+        "verification",
+        "multi-cycle",
+        "process-leak",
+        "sse-resumption"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "adr:architecture",
+      "relation": "references",
+      "target": "adr:tests"
+    },
+    {
+      "source": "adr:tests",
+      "relation": "references",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:antigravity-cli-validation",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:antigravity-cli-validation",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:diagnostics-candidate-review",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:diagnostics-candidate-review",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:e2e-web-validation",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:e2e-web-validation",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:orchestration-execution",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:orchestration-execution",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:settings-management",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:settings-management",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:telemetry-analytics",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:telemetry-analytics",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:web-shell-theme",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:web-shell-theme",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:workspace-initialization",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:workspace-initialization",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:session-cycle-management",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:session-cycle-management",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:swimlane-cycle-dashboard",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:swimlane-cycle-dashboard",
+      "relation": "depends_on",
+      "target": "feature:session-cycle-management"
+    },
+    {
+      "source": "feature:swimlane-cycle-dashboard",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    },
+    {
+      "source": "feature:multi-cycle-verification",
+      "relation": "implements",
+      "target": "adr:architecture"
+    },
+    {
+      "source": "feature:multi-cycle-verification",
+      "relation": "depends_on",
+      "target": "feature:session-cycle-management"
+    },
+    {
+      "source": "feature:multi-cycle-verification",
+      "relation": "depends_on",
+      "target": "feature:swimlane-cycle-dashboard"
+    },
+    {
+      "source": "feature:multi-cycle-verification",
+      "relation": "tested_by",
+      "target": "adr:tests"
+    }
+  ]
+}

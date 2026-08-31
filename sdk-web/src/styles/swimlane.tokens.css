@@ -1,0 +1,20 @@
+:root {
+  --swimlane-header-height: 48px;
+  --swimlane-lane-height: 76px;
+  --swimlane-lane-gap: 12px;
+  --swimlane-ruler-tick-w: 1px;
+  --swimlane-card-border-radius: 8px;
+  --swimlane-card-min-width: 48px;
+
+  /* State colors adhering to WCAG AA */
+  --swimlane-status-initialized: #004990;
+  --swimlane-status-running: #0070F3;
+  --swimlane-status-completed: #107C41;
+  --swimlane-status-failed: #D83B01;
+  --swimlane-status-aborted: #5C5C5C;
+
+  /* Background track colors */
+  --swimlane-bg-track-light: #F8F9FA;
+  --swimlane-bg-track-dark: #1E1E1E;
+  --swimlane-border-color: #E1DFDD;
+}

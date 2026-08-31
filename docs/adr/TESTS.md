@@ -36,7 +36,8 @@ REQUIRED: Manter os seguintes níveis mínimos de cobertura:
 
 ## PATTERNS & BEST PRACTICES
 REQUIRED: Simulação de streams de processos filhos sem dependência de binários externos em testes unitários.
-REQUIRED: Isolamento de credenciais e teste de padrões sensíveis com `AbstractCliRunner.filterSensitiveEnv`.
+REQUIRED: Uso de `MultiCycleTestHarness` para isolamento de testes de persistência em diretórios temporários (`os.tmpdir()`).
+REQUIRED: Isolamento de credenciais e teste de padrões sensíveis com `filterSensitiveEnv`.
 REQUIRED: Verificação automatizada de conformidade de acessibilidade (contraste >= 4.5:1) em componentes web.
 FORBIDDEN: Testes que dependem de estado global compartilhado entre execuções sem limpeza em `beforeEach` / `afterEach`.
 FORBIDDEN: Ignorar erros de quota da API sem mapeamento para `AgentRunnerErrorCode.QUOTA_EXCEEDED`.
