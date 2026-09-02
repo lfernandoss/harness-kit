@@ -10,6 +10,7 @@ export interface JobStoreRepository {
     error?: { code: string; message: string }
   ): Promise<void>
   listActive(): Promise<OrchestrationJob[]>
+  listAll?(): Promise<OrchestrationJob[]>
   purgeCompleted(maxAgeMs?: number): Promise<number>
   delete(jobId: string): Promise<boolean>
 }

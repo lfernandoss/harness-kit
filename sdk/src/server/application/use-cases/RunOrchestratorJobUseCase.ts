@@ -41,20 +41,22 @@ export class RunOrchestratorJobUseCase {
       }
     }
 
-    // Auto-abort any previous running or queued jobs on the same workspace path to avoid stale lock deadlocks
-    const activeJobs = await this.jobStore.listActive()
-    for (const activeJob of activeJobs) {
-      if (activeJob.workspacePath === workspacePath) {
-        const abortController = JobExecutionRegistry.getInstance().getAbortController(activeJob.jobId)
-        if (abortController) {
-          try { abortController.abort() } catch {}
-        }
-        await this.jobStore.updateStatus(activeJob.jobId, 'aborted', {
-          code: 'SUPERSEDED_BY_NEW_JOB',
-          message: 'A new orchestration cycle was initiated for this workspace.',
-        })
-        if (this.lockManager) {
-          await this.lockManager.releaseLock(workspacePath, activeJob.jobId)
+    // Auto-abort any previous running or queued jobs on the same workspace path to avoid stale lock deadlocks (only if not parallel)
+    if (!body.parallel) {
+      const activeJobs = await this.jobStore.listActive()
+      for (const activeJob of activeJobs) {
+        if (activeJob.workspacePath === workspacePath) {
+          const abortController = JobExecutionRegistry.getInstance().getAbortController(activeJob.jobId)
+          if (abortController) {
+            try { abortController.abort() } catch {}
+          }
+          await this.jobStore.updateStatus(activeJob.jobId, 'aborted', {
+            code: 'SUPERSEDED_BY_NEW_JOB',
+            message: 'A new orchestration cycle was initiated for this workspace.',
+          })
+          if (this.lockManager) {
+            await this.lockManager.releaseLock(workspacePath, activeJob.jobId)
+          }
         }
       }
     }

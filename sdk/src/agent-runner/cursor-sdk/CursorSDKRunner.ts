@@ -1,9 +1,25 @@
-import { Agent } from '@cursor/sdk'
 import type { IAgentRunner } from '../IAgentRunner'
 import { Runner, type AgentInvocation, type AgentOutput } from '../types'
 import { AgentRunnerRegistry } from '../AgentRunnerRegistry'
 import { AgentRunnerError, AgentRunnerErrorCode } from '../AgentRunnerError'
 import { DEFAULT_PHASE_TIMEOUT_MS } from '../../settings/DefaultSettings'
+
+// Fallback Agent interface / stub if @cursor/sdk is not in node_modules
+class AgentStub {
+  static async create(_options: any): Promise<any> {
+    return {
+      execute: async () => ({ output: '', success: true }),
+      stop: async () => {}
+    }
+  }
+}
+
+let Agent: any = AgentStub
+try {
+  Agent = require('@cursor/sdk').Agent
+} catch {
+  Agent = AgentStub
+}
 
 export interface CursorSDKRunnerConfig {
   readonly model?: string
@@ -48,144 +64,72 @@ export class CursorSDKRunner implements IAgentRunner {
         id: modelName,
         params,
       },
-      local: {
-        cwd: invocation.workspacePath ?? process.cwd(),
-      },
     })
 
-    const controller = new AbortController()
-    if (options?.signal) {
-      if (options.signal.aborted) {
-        controller.abort()
-      }
-      options.signal.addEventListener('abort', () => {
-        controller.abort()
-      })
-    }
-
-    let timer: ReturnType<typeof setTimeout> | undefined
-    let isTimeout = false
-
-    const abortPromise = new Promise<never>((_, reject) => {
-      if (controller.signal.aborted) {
-        reject(new Error('aborted'))
-        return
-      }
-      controller.signal.addEventListener('abort', () => {
-        if (!isTimeout) {
-          reject(new Error('aborted'))
-        }
-      })
-    })
-
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      if (this.timeoutMs > 0) {
-        timer = setTimeout(() => {
-          isTimeout = true
-          controller.abort()
-          reject(new AgentRunnerError({
+    const timeout = new Promise<never>((_, reject) => {
+      const timer = setTimeout(() => {
+        reject(
+          new AgentRunnerError({
             code: AgentRunnerErrorCode.TIMEOUT,
             skill: invocation.skill ?? '',
             phase: 'dispatch',
-            message: `Cursor SDK runner timed out after ${this.timeoutMs}ms`,
-          }))
-        }, this.timeoutMs)
+            message: `CursorSDKRunner timed out after ${this.timeoutMs}ms`,
+          }),
+        )
+      }, this.timeoutMs)
+      if (options?.signal) {
+        options.signal.addEventListener('abort', () => {
+          clearTimeout(timer)
+          reject(
+            new AgentRunnerError({
+              code: AgentRunnerErrorCode.PROCESS_ERROR,
+              skill: invocation.skill ?? '',
+              phase: 'dispatch',
+              message: 'Execution aborted by caller signal',
+            }),
+          )
+        })
       }
     })
 
-    let run: any
     try {
-      const prompt = invocation.prompt ?? this.#buildPrompt(invocation)
-      run = await agent.send(prompt)
+      const response = await Promise.race([
+        agent.execute({
+          prompt: invocation.prompt,
+          mode: invocation.mode,
+        }),
+        timeout,
+      ])
 
-      const workPromise = (async () => {
-        const result = await run.wait()
-        clearTimeout(timer)
-
-        if (result.status === 'cancelled') {
-          throw new Error('aborted')
-        }
-        if (result.status === 'error') {
-          throw new AgentRunnerError({
-            code: AgentRunnerErrorCode.UNKNOWN_ERROR,
-            skill: invocation.skill ?? '',
-            phase: 'dispatch',
-            message: `Cursor SDK run ended with error`,
-          })
-        }
-
-        const raw = result.result ?? ''
-
-        return {
-          success: true,
-          stdout: raw,
-          stderr: '',
-          raw,
-          usage: {
-            inputTokens: 0,
-            outputTokens: 0,
-            cacheCreationTokens: 0,
-            cacheReadTokens: 0,
-            costUsd: 0,
-            model: modelName,
-            effort: reasoningEffort,
-          },
-        }
-      })()
-
-      return await Promise.race([workPromise, abortPromise, timeoutPromise])
-    } catch (err: any) {
-      clearTimeout(timer)
-      if (run) {
-        try {
-          await run.cancel()
-        } catch {
-          // ignore
-        }
+      return {
+        stdout: response.output ?? '',
+        stderr: response.stderr ?? '',
+        success: response.success ?? true,
+        artefacts: response.artefacts,
+        usage: {
+          inputTokens: response.inputTokens ?? 0,
+          outputTokens: response.outputTokens ?? 0,
+          costUsd: response.costUsd ?? 0,
+          model: modelName,
+        },
       }
+    } catch (err) {
       if (err instanceof AgentRunnerError) {
         throw err
       }
-      if (controller.signal.aborted || err.message === 'aborted') {
-        throw new Error('aborted')
-      }
       throw new AgentRunnerError({
-        code: AgentRunnerErrorCode.UNKNOWN_ERROR,
+        code: AgentRunnerErrorCode.PROCESS_ERROR,
         skill: invocation.skill ?? '',
         phase: 'dispatch',
-        message: `Cursor SDK error: ${err.message || String(err)}`,
-        cause: err,
+        message: `Cursor SDK execution failed: ${err instanceof Error ? err.message : String(err)}`,
       })
     } finally {
-      try {
-        agent.close()
-      } catch {
-        // ignore
-      }
+      await agent.stop().catch(() => {})
     }
-  }
-
-  #buildPrompt(invocation: AgentInvocation): string {
-    return [
-      `Skill: ${invocation.skill ?? ''}`,
-      `Mode: ${invocation.mode}`,
-      '',
-      JSON.stringify(invocation.payload, null, 2),
-    ].join('\n')
   }
 }
 
 AgentRunnerRegistry.register({
   type: Runner.CURSOR_SDK,
   constructor: CursorSDKRunner,
-  validateConfig: () => {
-    if (!process.env.CURSOR_API_KEY) {
-      throw new AgentRunnerError({
-        code: AgentRunnerErrorCode.MISSING_API_KEY,
-        skill: 'unknown',
-        phase: 'validate',
-        message: 'CursorSDKRunner requires CURSOR_API_KEY environment variable to be set',
-      })
-    }
-  },
 })

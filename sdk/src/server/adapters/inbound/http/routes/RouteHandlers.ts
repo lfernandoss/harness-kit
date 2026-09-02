@@ -31,6 +31,15 @@ import { AuthStrategyFactory } from '../../../outbound/auth/AuthStrategyFactory'
 import type { IAuthStrategy, AuthUserContext } from '../../../outbound/auth/types'
 import { WebUiRenderer } from '../web/WebUiRenderer'
 import { JobExecutionRegistry } from '../../../outbound/services/JobExecutionRegistry'
+import { FileSessionRepository } from '../../../outbound/persistence/FileSessionRepository'
+import { ProcessTreeManager } from '../../../outbound/services/ProcessTreeManager'
+import { CreateCycleSessionUseCase } from '../../../../application/use-cases/CreateCycleSessionUseCase'
+import { ResumeCycleUseCase } from '../../../../application/use-cases/ResumeCycleUseCase'
+import { AbortCycleUseCase } from '../../../../application/use-cases/AbortCycleUseCase'
+import { ParallelCycleCoordinator } from '../../../../application/use-cases/ParallelCycleCoordinator'
+import { WorktreeIsolationProvider } from '../../../outbound/services/WorktreeIsolationProvider'
+import { SessionCycleRoutes } from './SessionCycleRoutes'
+import { ParallelCycleRoutes } from './ParallelCycleRoutes'
 
 export interface UseCaseContainer {
   runJobUseCase?: RunOrchestratorJobUseCase
@@ -74,6 +83,8 @@ export class RouteHandlers {
   private abortJobUseCase: AbortOrchestrationJobUseCase
   private eventBroadcaster: EventStreamBroadcaster
   private workspaceInitController: WorkspaceInitController
+  private sessionCycleRoutes: SessionCycleRoutes
+  private parallelCycleRoutes: ParallelCycleRoutes
   private authStrategy: IAuthStrategy
   private config?: HttpServerConfig
   private requestCounts = new Map<string, { count: number; resetAt: number }>()
@@ -118,6 +129,22 @@ export class RouteHandlers {
       this.getWorkspaceInitStatusUseCase
     )
     this.authStrategy = AuthStrategyFactory.create(config?.auth)
+
+    const sessionRepo = new FileSessionRepository(process.cwd())
+    const processTreeManager = new ProcessTreeManager()
+    const createCycleUseCase = new CreateCycleSessionUseCase(sessionRepo)
+    const resumeCycleUseCase = new ResumeCycleUseCase(sessionRepo)
+    const abortCycleUseCase = new AbortCycleUseCase(sessionRepo, processTreeManager)
+    this.sessionCycleRoutes = new SessionCycleRoutes(
+      sessionRepo,
+      createCycleUseCase,
+      resumeCycleUseCase,
+      abortCycleUseCase
+    )
+
+    const wtProvider = new WorktreeIsolationProvider(process.cwd())
+    const parallelCoordinator = new ParallelCycleCoordinator(sessionRepo, wtProvider, processTreeManager)
+    this.parallelCycleRoutes = new ParallelCycleRoutes(parallelCoordinator)
   }
 
   private checkRateLimit(clientIp: string, pathname?: string): void {
@@ -154,6 +181,16 @@ export class RouteHandlers {
 
       const clientIp = req.socket?.remoteAddress || '127.0.0.1'
       this.checkRateLimit(clientIp, pathname)
+
+      if (pathname.startsWith('/api/sessions')) {
+        const handled = this.sessionCycleRoutes.handle(req, res)
+        if (handled) return
+      }
+
+      if (pathname.startsWith('/api/cycles')) {
+        const handled = this.parallelCycleRoutes.handle(req, res)
+        if (handled) return
+      }
 
       let rawBody: string | undefined
       if (method === 'POST' || method === 'PUT' || method === 'DELETE') {
@@ -326,7 +363,14 @@ export class RouteHandlers {
 
       if (method === 'GET' && (pathname === '/orchestrator/jobs/active' || pathname === '/orchestrator/active')) {
         const activeJobs = await this.jobStore.listActive()
-        this.sendJson(res, 200, { activeJobs, count: activeJobs.length })
+        const allJobs = this.jobStore.listAll ? await this.jobStore.listAll() : activeJobs
+        this.sendJson(res, 200, { activeJobs, allJobs, count: activeJobs.length })
+        return
+      }
+
+      if (method === 'GET' && (pathname === '/orchestrator/jobs' || pathname === '/orchestrator/jobs/all')) {
+        const allJobs = this.jobStore.listAll ? await this.jobStore.listAll() : await this.jobStore.listActive()
+        this.sendJson(res, 200, { jobs: allJobs, count: allJobs.length })
         return
       }
 
@@ -500,10 +544,65 @@ export class RouteHandlers {
         return
       }
 
+      if (method === 'GET' && (pathname === '/api/workspace/browse' || pathname === '/api/workspace/directories')) {
+        try {
+          const reqPath = url.searchParams.get('path') || process.cwd()
+          const fs = require('node:fs')
+          const pathModule = require('node:path')
+          const os = require('node:os')
+
+          let resolvedPath = pathModule.resolve(reqPath)
+          if (!fs.existsSync(resolvedPath) || !fs.statSync(resolvedPath).isDirectory()) {
+            resolvedPath = process.cwd()
+          }
+
+          const normalizedCurrent = resolvedPath.replace(/\\/g, '/')
+          const parentDir = pathModule.dirname(resolvedPath).replace(/\\/g, '/')
+          const homeDir = os.homedir().replace(/\\/g, '/')
+
+          const entries = fs.readdirSync(resolvedPath, { withFileTypes: true })
+          const directories = entries
+            .filter((e: any) => e.isDirectory() && !e.name.startsWith('$') && e.name !== 'System Volume Information')
+            .map((e: any) => e.name)
+            .sort((a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+
+          const drives = ['C:', 'D:', 'E:', 'F:', 'G:']
+            .filter((d: string) => {
+              try { return fs.existsSync(d + '\\') } catch { return false }
+            })
+            .map((d: string) => d + '/')
+
+          this.sendJson(res, 200, {
+            currentPath: normalizedCurrent,
+            parentPath: parentDir !== normalizedCurrent ? parentDir : null,
+            homePath: homeDir,
+            directories,
+            drives
+          })
+        } catch (err: any) {
+          this.sendJson(res, 500, { error: err.message })
+        }
+        return
+      }
+
       if ((method === 'POST' || method === 'GET') && pathname === '/api/workspace/select-folder') {
         try {
-          const psCmd = `powershell -NoProfile -ExecutionPolicy Bypass -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.Description = 'Selecione a pasta do projeto'; $f.ShowNewFolderButton = $true; if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"`
-          require('node:child_process').exec(psCmd, (err: any, stdout: string) => {
+          let currentPath = ''
+          if (rawBody) {
+            try {
+              const b = JSON.parse(rawBody)
+              if (b.currentPath && typeof b.currentPath === 'string') {
+                currentPath = b.currentPath.replace(/'/g, "''").replace(/\//g, '\\')
+              }
+            } catch {}
+          }
+          if (!currentPath) {
+            currentPath = process.cwd().replace(/'/g, "''").replace(/\//g, '\\')
+          }
+
+          const psScript = `[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.Description = 'Selecione a pasta do projeto'; $f.ShowNewFolderButton = $true; $f.RootFolder = [System.Environment+SpecialFolder]::MyComputer; if (Test-Path '${currentPath}') { $f.SelectedPath = '${currentPath}' }; if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }`
+          const psCmd = `powershell -NoProfile -Sta -ExecutionPolicy Bypass -Command "${psScript}"`
+          require('node:child_process').exec(psCmd, { timeout: 60000 }, (err: any, stdout: string) => {
             if (err || !stdout.trim()) {
               this.sendJson(res, 200, { selectedPath: null })
             } else {

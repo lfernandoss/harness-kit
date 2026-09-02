@@ -145,19 +145,6 @@
       ]
     },
     {
-      "id": "feature:swimlane-cycle-dashboard",
-      "type": "feature",
-      "title": "Interactive Swimlane Multi-Cycle Dashboard",
-      "path": "docs/feature/swimlane-cycle-dashboard.md",
-      "tags": [
-        "swimlanes",
-        "timeline",
-        "dashboard",
-        "sse-stream",
-        "ui-controls"
-      ]
-    },
-    {
       "id": "feature:multi-cycle-verification",
       "type": "feature",
       "title": "Multi-Cycle Orchestration & Session Reuse Automated Verification Suite",
@@ -168,6 +155,19 @@
         "multi-cycle",
         "process-leak",
         "sse-resumption"
+      ]
+    },
+    {
+      "id": "feature:parallel-cycle-management",
+      "type": "feature",
+      "title": "Parallel Cycle Management with Dedicated 1:1 Sessions",
+      "path": "docs/feature/parallel-cycle-management.md",
+      "tags": [
+        "parallel-cycles",
+        "dedicated-session",
+        "git-worktrees",
+        "concurrency",
+        "sse"
       ]
     }
   ],
@@ -273,37 +273,32 @@
       "target": "adr:tests"
     },
     {
-      "source": "feature:swimlane-cycle-dashboard",
+      "source": "feature:multi-cycle-verification",
       "relation": "implements",
       "target": "adr:architecture"
     },
     {
-      "source": "feature:swimlane-cycle-dashboard",
+      "source": "feature:multi-cycle-verification",
       "relation": "depends_on",
       "target": "feature:session-cycle-management"
     },
     {
-      "source": "feature:swimlane-cycle-dashboard",
+      "source": "feature:multi-cycle-verification",
       "relation": "tested_by",
       "target": "adr:tests"
     },
     {
-      "source": "feature:multi-cycle-verification",
+      "source": "feature:parallel-cycle-management",
       "relation": "implements",
       "target": "adr:architecture"
     },
     {
-      "source": "feature:multi-cycle-verification",
+      "source": "feature:parallel-cycle-management",
       "relation": "depends_on",
       "target": "feature:session-cycle-management"
     },
     {
-      "source": "feature:multi-cycle-verification",
-      "relation": "depends_on",
-      "target": "feature:swimlane-cycle-dashboard"
-    },
-    {
-      "source": "feature:multi-cycle-verification",
+      "source": "feature:parallel-cycle-management",
       "relation": "tested_by",
       "target": "adr:tests"
     }

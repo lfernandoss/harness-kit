@@ -103,7 +103,8 @@ export class JobRunnerService {
    * Executes a single orchestration job.
    */
   async executeJob(job: OrchestrationJob): Promise<void> {
-    const acquired = await this.lockManager.acquireLock(job.workspacePath, job.jobId)
+    const lockKey = job.request.parallel ? `${job.workspacePath}:job:${job.jobId}` : job.workspacePath
+    const acquired = await this.lockManager.acquireLock(lockKey, job.jobId)
     if (!acquired) {
       await this.jobStore.updateStatus(job.jobId, 'failed', {
         code: 'LOCK_ACQUISITION_FAILED',
@@ -264,8 +265,8 @@ export class JobRunnerService {
           }
         } catch {}
       }
-      await this.lockManager.releaseLock(job.workspacePath, job.jobId)
-      this.jobQueue.notifyLockReleased(job.workspacePath)
+      await this.lockManager.releaseLock(lockKey, job.jobId)
+      this.jobQueue.notifyLockReleased(lockKey)
     }
   }
 

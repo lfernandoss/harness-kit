@@ -21,6 +21,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'cross-spawn': path.resolve('C:/Users/psn_l/harness-kit/sdk/node_modules/cross-spawn/index.js'),
+      '@anthropic-ai/sdk': path.resolve('C:/Users/psn_l/harness-kit/sdk/node_modules/@anthropic-ai/sdk/index.js'),
     },
   },
 });

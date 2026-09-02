@@ -93,6 +93,14 @@ export class InMemoryJobStore implements JobStoreRepository {
     return activeJobs
   }
 
+  async listAll(): Promise<OrchestrationJob[]> {
+    const allJobs: OrchestrationJob[] = []
+    for (const job of this.jobs.values()) {
+      allJobs.push(JSON.parse(JSON.stringify(job)))
+    }
+    return allJobs
+  }
+
   async delete(jobId: string): Promise<boolean> {
     return this.jobs.delete(jobId)
   }

@@ -17,4 +17,5 @@ export interface RunRequestDtoExtended extends RunRequestDto {
   skipValidation?: boolean
   skipMemory?: boolean
   refinementAnswers?: Array<{ question: string; answer: string }>
+  parallel?: boolean
 }

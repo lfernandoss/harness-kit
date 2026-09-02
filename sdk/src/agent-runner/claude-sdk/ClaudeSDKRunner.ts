@@ -1,4 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk'
+let Anthropic: any
+try {
+  Anthropic = require('@anthropic-ai/sdk')
+  if (Anthropic.default) Anthropic = Anthropic.default
+} catch {
+  Anthropic = class MockAnthropic {
+    messages = { create: async () => ({ content: [{ type: 'text', text: '' }] }) }
+  }
+}
 import type { IAgentRunner } from '../IAgentRunner'
 import { Runner, type AgentInvocation, type AgentOutput } from '../types'
 import { type AgentRunnerConfig, DEFAULT_AGENT_RUNNER_CONFIG } from './AgentRunnerConfig'

@@ -512,9 +512,28 @@ export class WebUiRenderer {
       <main class="app-content">
         <!-- VIEW 1: RUN / ORCHESTRATION -->
         <section id="view-run" class="view-section active">
+          <!-- Multi-Task Concurrent Tab Bar -->
+          <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border-default); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; gap: 10px; align-items: center; overflow-x: auto;" id="hubTasksTabBar">
+            <button type="button" id="btnHubNewTaskTab" class="btn btn-primary btn-sm" style="white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+              <span>+ Nova Tarefa Paralela</span>
+            </button>
+            <div id="hubActiveTasksPills" style="display: flex; gap: 8px; align-items: center; flex: 1; overflow-x: auto;">
+              <!-- Dynamic task pills rendered here -->
+            </div>
+          </div>
+
           <div class="view-card">
-            <h2 class="view-title">🚀 Autonomous Orchestration Hub</h2>
-            <p class="view-subtitle">Dispare e acompanhe o ciclo completo de TDD autônomo (Bootstrap → Refinement → Planning → Development → Review → Memory).</p>
+            <div id="activeTaskMetaBar" style="display: none; background: rgba(0, 51, 153, 0.05); border: 1px solid var(--itau-navy); border-radius: 6px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>Sessão 1:1:</strong> <code id="lblActiveSessionId">sess-none</code> |
+                <strong>Ciclo:</strong> <code id="lblActiveCycleId">cycle-none</code> |
+                <strong>Worktree:</strong> <span id="lblActiveWorktree">isolado</span>
+              </div>
+              <span id="lblActiveTaskBadge" class="status-badge status-connected" style="font-size: 11px;">RUNNING</span>
+            </div>
+
+            <h2 class="view-title" id="hubFormTitle">🚀 Autonomous Orchestration Hub</h2>
+            <p class="view-subtitle">Dispare e acompanhe tarefas autônomas em paralelo com aprovação de specs (Bootstrap → Refinement → Planning → Development → Review → Memory).</p>
             
             <form id="runForm">
               <div class="form-group">
@@ -616,6 +635,34 @@ export class WebUiRenderer {
                 <span class="step-label">Memory</span>
                 <span class="step-badge-status">Aguardando</span>
               </div>
+            </div>
+          </div>
+
+          <!-- Spec Approval Gate Banner (Human-in-the-Loop) -->
+          <div id="specApprovalBanner" class="view-card" style="display: none; border-left: 4px solid var(--itau-orange); background: rgba(236,112,0,0.06); margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+              <div style="flex: 1;">
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--itau-orange); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                  <span>📋 Gate de Aprovação: Especificações & Arquitetura Prontas</span>
+                </h3>
+                <p style="font-size: 13px; color: var(--text-primary); margin-bottom: 10px;">
+                  As fases de Refinamento e Planejamento foram concluídas com sucesso para esta tarefa. Revise o design antes de autorizar a escrita de código.
+                </p>
+                <div id="specSummaryBox" style="background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; margin-bottom: 12px; max-height: 120px; overflow-y: auto; color: var(--text-primary);">
+                  Especificação aprovada pelo Software Architect. Pronto para desenvolvimento.
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="btnApproveSpecAndDev" class="btn btn-primary">
+                <span>✅ Aprovar Spec e Iniciar Desenvolvimento</span>
+              </button>
+              <button type="button" id="btnInspectFullSpec" class="btn btn-outline">
+                <span>👁️ Inspecionar Decisões Arquiteturais</span>
+              </button>
+              <button type="button" id="btnRejectSpec" class="btn btn-secondary">
+                <span>✏️ Solicitar Ajustes</span>
+              </button>
             </div>
           </div>
 
@@ -866,6 +913,54 @@ Sessions (real work)
     </div>
   </div>
 
+  <!-- IN-BROWSER INSTANT FOLDER PICKER MODAL -->
+  <div id="folderPickerModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 680px; width: 100%;">
+      <div class="modal-header">
+        <h3 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <span>📁 Selecionar Pasta do Workspace</span>
+        </h3>
+        <button type="button" id="btnCloseFolderPickerModal" class="btn-icon">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <!-- Path Navigation Bar -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
+          <button type="button" id="btnFolderUp" class="btn btn-outline" style="padding: 6px 12px; font-size: 13px;" title="Subir um nível">
+            ⬆ Subir
+          </button>
+          <input type="text" id="folderPickerCurrentPathInput" class="form-control" style="font-family: monospace; font-size: 13px; flex: 1;" placeholder="Caminho da pasta..." />
+          <button type="button" id="btnFolderGo" class="btn btn-outline" style="padding: 6px 12px; font-size: 13px;" title="Ir para o caminho">
+            ➔ Ir
+          </button>
+        </div>
+
+        <!-- Quick Shortcuts -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Atalhos:</span>
+          <div id="folderPickerShortcuts" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- Directory List -->
+        <div id="folderPickerList" style="border: 1px solid var(--border-default); border-radius: 6px; max-height: 280px; min-height: 180px; overflow-y: auto; background: var(--bg-surface-elevated); padding: 4px;">
+          <!-- Populated dynamically with folders -->
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="btnTryNativePicker" class="btn btn-outline" style="font-size: 12px;" title="Tentar abrir seletor nativo do Windows">
+          🖥️ Diálogo do SO
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btnCancelFolderPicker" class="btn btn-outline">
+            Cancelar
+          </button>
+          <button type="button" id="btnConfirmFolderPicker" class="btn btn-primary">
+            ✅ Selecionar Esta Pasta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // SPA Navigation
     function navigateTo(route) {
@@ -1021,39 +1116,177 @@ Sessions (real work)
       localStorage.setItem('harness_last_scope', scopeInput.value);
     });
 
-    async function handleBrowseFolder() {
-      appendLog('[EXPLORER] Abrindo seletor nativo de pastas...');
-      btnBrowseFolder.disabled = true;
-      btnBrowseFolder.innerHTML = '<span>⏳ Aguardando...</span>';
+    // In-Browser Instant Folder Picker Controller
+    const folderPickerModal = document.getElementById('folderPickerModal');
+    const btnCloseFolderPickerModal = document.getElementById('btnCloseFolderPickerModal');
+    const btnCancelFolderPicker = document.getElementById('btnCancelFolderPicker');
+    const btnConfirmFolderPicker = document.getElementById('btnConfirmFolderPicker');
+    const btnFolderUp = document.getElementById('btnFolderUp');
+    const btnFolderGo = document.getElementById('btnFolderGo');
+    const btnTryNativePicker = document.getElementById('btnTryNativePicker');
+    const folderPickerCurrentPathInput = document.getElementById('folderPickerCurrentPathInput');
+    const folderPickerShortcuts = document.getElementById('folderPickerShortcuts');
+    const folderPickerList = document.getElementById('folderPickerList');
+
+    let pickerCurrentPath = '';
+    let pickerParentPath = null;
+
+    function openFolderPickerModal(startPath) {
+      pickerCurrentPath = startPath || (projectInput ? projectInput.value.trim() : '') || '';
+      folderPickerModal.classList.add('open');
+      loadFolderDirectory(pickerCurrentPath);
+    }
+
+    function closeFolderPickerModal() {
+      folderPickerModal.classList.remove('open');
+    }
+
+    if (btnCloseFolderPickerModal) btnCloseFolderPickerModal.onclick = closeFolderPickerModal;
+    if (btnCancelFolderPicker) btnCancelFolderPicker.onclick = closeFolderPickerModal;
+
+    folderPickerModal.addEventListener('click', (e) => {
+      if (e.target === folderPickerModal) closeFolderPickerModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && folderPickerModal.classList.contains('open')) {
+        closeFolderPickerModal();
+      }
+    });
+
+    async function loadFolderDirectory(targetPath) {
+      folderPickerList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">⏳ Carregando diretórios...</div>';
 
       try {
-        const res = await fetch('/api/workspace/select-folder', { method: 'POST' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.selectedPath) {
-            projectInput.value = data.selectedPath;
-            localStorage.setItem('harness_last_project_path', data.selectedPath);
-            appendLog(\`[EXPLORER] ✅ Pasta selecionada e salva: \${data.selectedPath}\`);
-            return;
-          }
-        }
-      } catch (err) {
-        appendLog(\`[EXPLORER] Aviso ao abrir diálogo: \${err.message}\`);
-      } finally {
-        btnBrowseFolder.disabled = false;
-        btnBrowseFolder.innerHTML = '<span>📁 Selecionar Pasta</span>';
-      }
+        const url = '/api/workspace/browse' + (targetPath ? '?path=' + encodeURIComponent(targetPath) : '');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Status ' + res.status);
+        const data = await res.json();
 
-      if (window.showDirectoryPicker) {
-        try {
-          const dirHandle = await window.showDirectoryPicker();
-          if (dirHandle && dirHandle.name) {
-            appendLog(\`[EXPLORER] Diretório selecionado: \${dirHandle.name}\`);
-          }
-        } catch (err) {
-          if (err.name !== 'AbortError') console.error(err);
+        pickerCurrentPath = data.currentPath || targetPath;
+        pickerParentPath = data.parentPath;
+        folderPickerCurrentPathInput.value = pickerCurrentPath;
+
+        if (btnFolderUp) {
+          btnFolderUp.disabled = !pickerParentPath;
         }
+
+        // Render Shortcuts
+        const shortcuts = [];
+        if (data.homePath) {
+          shortcuts.push({ label: '🏠 Início', path: data.homePath });
+        }
+        const savedProject = localStorage.getItem('harness_last_project_path');
+        if (savedProject && savedProject !== pickerCurrentPath) {
+          shortcuts.push({ label: '⭐ Recente', path: savedProject });
+        }
+        if (data.drives && data.drives.length > 0) {
+          data.drives.forEach(d => {
+            shortcuts.push({ label: '💾 ' + d, path: d });
+          });
+        }
+
+        folderPickerShortcuts.innerHTML = shortcuts.map(s => {
+          return '<button type="button" class="btn btn-outline shortcut-pill" data-path="' + s.path + '" style="padding: 3px 8px; font-size: 11px; border-radius: 4px;">' + s.label + '</button>';
+        }).join('');
+
+        folderPickerShortcuts.querySelectorAll('.shortcut-pill').forEach(btn => {
+          btn.onclick = () => loadFolderDirectory(btn.getAttribute('data-path'));
+        });
+
+        // Render Folder List
+        if (!data.directories || data.directories.length === 0) {
+          folderPickerList.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-secondary); font-size: 13px;">Nenhuma subpasta encontrada neste diretório.</div>';
+          return;
+        }
+
+        folderPickerList.innerHTML = data.directories.map(name => {
+          return '<div class="folder-row" data-name="' + name + '" style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; border-radius: 4px; font-size: 13px; user-select: none; border-bottom: 1px solid var(--border-default);">' +
+            '<span style="font-size: 15px;">📁</span>' +
+            '<span style="font-weight: 500; flex: 1;">' + name + '</span>' +
+            '<span style="color: var(--text-secondary); font-size: 11px;">➔ Abrir</span>' +
+          '</div>';
+        }).join('');
+
+        folderPickerList.querySelectorAll('.folder-row').forEach(row => {
+          row.addEventListener('mouseenter', () => {
+            row.style.background = 'var(--bg-surface)';
+          });
+          row.addEventListener('mouseleave', () => {
+            row.style.background = 'transparent';
+          });
+          row.addEventListener('click', () => {
+            const folderName = row.getAttribute('data-name');
+            const sep = pickerCurrentPath.endsWith('/') ? '' : '/';
+            const nextPath = pickerCurrentPath + sep + folderName;
+            loadFolderDirectory(nextPath);
+          });
+        });
+      } catch (err) {
+        folderPickerList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--color-danger); font-size: 13px;">Erro ao ler diretório: ' + err.message + '</div>';
       }
+    }
+
+    if (btnFolderUp) {
+      btnFolderUp.onclick = () => {
+        if (pickerParentPath) loadFolderDirectory(pickerParentPath);
+      };
+    }
+
+    if (btnFolderGo) {
+      btnFolderGo.onclick = () => {
+        const val = folderPickerCurrentPathInput.value.trim();
+        if (val) loadFolderDirectory(val);
+      };
+    }
+
+    if (folderPickerCurrentPathInput) {
+      folderPickerCurrentPathInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = folderPickerCurrentPathInput.value.trim();
+          if (val) loadFolderDirectory(val);
+        }
+      });
+    }
+
+    if (btnConfirmFolderPicker) {
+      btnConfirmFolderPicker.onclick = () => {
+        if (pickerCurrentPath) {
+          projectInput.value = pickerCurrentPath;
+          localStorage.setItem('harness_last_project_path', pickerCurrentPath);
+          appendLog('[EXPLORER] ✅ Pasta selecionada e salva: ' + pickerCurrentPath);
+        }
+        closeFolderPickerModal();
+      };
+    }
+
+    if (btnTryNativePicker) {
+      btnTryNativePicker.onclick = async () => {
+        btnTryNativePicker.disabled = true;
+        btnTryNativePicker.textContent = '⏳ Abrindo SO...';
+        try {
+          const res = await fetch('/api/workspace/select-folder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPath: pickerCurrentPath })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.selectedPath) {
+              pickerCurrentPath = data.selectedPath;
+              folderPickerCurrentPathInput.value = data.selectedPath;
+              loadFolderDirectory(data.selectedPath);
+            }
+          }
+        } catch {}
+        btnTryNativePicker.disabled = false;
+        btnTryNativePicker.textContent = '🖥️ Diálogo do SO';
+      };
+    }
+
+    async function handleBrowseFolder() {
+      openFolderPickerModal(projectInput.value.trim());
     }
 
     if (btnBrowseFolder) btnBrowseFolder.addEventListener('click', handleBrowseFolder);
@@ -1075,6 +1308,7 @@ Sessions (real work)
 
     let currentQuestions = [];
     let activeRefinementJobId = null;
+    const dismissedSocraticModals = new Set();
 
     function renderAndOpenSocraticModal(questions, jobId) {
       currentQuestions = questions || [];
@@ -1165,12 +1399,14 @@ Sessions (real work)
         }
 
         if (questionsToDisplay && questionsToDisplay.length > 0) {
+          if (targetJobId) dismissedSocraticModals.delete(targetJobId);
+          if (activeTaskId) dismissedSocraticModals.delete(activeTaskId);
           renderAndOpenSocraticModal(questionsToDisplay, targetJobId);
         } else {
           appendLog('[INFO] ⏳ Preencha o escopo para consultar as questões socráticas do Software Architect.');
         }
       } catch (err) {
-        appendLog(\`[ERROR] Falha ao carregar questões socráticas: \${err.message}\`);
+        appendLog('[ERROR] Falha ao carregar questões socráticas: ' + err.message);
       } finally {
         if (btnViewSocraticQuestions) {
           btnViewSocraticQuestions.disabled = false;
@@ -1183,13 +1419,29 @@ Sessions (real work)
       btnViewSocraticQuestions.addEventListener('click', handleViewSocraticQuestions);
     }
 
-    btnCloseSocraticModal.addEventListener('click', () => {
+    function dismissSocraticModal() {
       socraticModal.classList.remove('open');
+      if (activeRefinementJobId) dismissedSocraticModals.add(activeRefinementJobId);
+      if (activeTaskId) dismissedSocraticModals.add(activeTaskId);
+    }
+
+    btnCloseSocraticModal.addEventListener('click', dismissSocraticModal);
+
+    socraticModal.addEventListener('click', (e) => {
+      if (e.target === socraticModal) {
+        dismissSocraticModal();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && socraticModal.classList.contains('open')) {
+        dismissSocraticModal();
+      }
     });
 
     btnAcceptAllRecs.addEventListener('click', () => {
       currentQuestions.forEach((q, idx) => {
-        const ansInput = document.getElementById(\`ans-\${idx}\`);
+        const ansInput = document.getElementById('ans-' + idx);
         if (ansInput) ansInput.value = q.recommendation;
       });
       const additionalInput = document.getElementById('ans-additional');
@@ -1198,7 +1450,7 @@ Sessions (real work)
 
     btnConfirmAndStart.addEventListener('click', async () => {
       const answers = currentQuestions.map((q, idx) => {
-        const ansInput = document.getElementById(\`ans-\${idx}\`);
+        const ansInput = document.getElementById('ans-' + idx);
         return {
           question: q.question,
           answer: (ansInput ? ansInput.value.trim() : '') || q.recommendation
@@ -1215,11 +1467,13 @@ Sessions (real work)
 
       socraticModal.classList.remove('open');
       const jobId = activeRefinementJobId || localStorage.getItem('harness_active_job_id');
+      if (jobId) dismissedSocraticModals.delete(jobId);
+      if (activeTaskId) dismissedSocraticModals.delete(activeTaskId);
 
       if (jobId) {
-        appendLog(\`[REFINEMENT] 🚀 Enviando \${answers.length} respostas socráticas para o Job \${jobId}...\`);
+        appendLog('[REFINEMENT] 🚀 Enviando ' + answers.length + ' respostas socráticas para o Job ' + jobId + '...');
         try {
-          await fetch(\`/orchestrator/jobs/\${jobId}/refine-answers\`, {
+          await fetch('/orchestrator/jobs/' + jobId + '/refine-answers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ jobId, answers })
@@ -1230,16 +1484,246 @@ Sessions (real work)
       }
     });
 
-    // Run Job Dispatcher & SSE Stream Listener
+    // Multi-Task Autonomous Orchestration Hub State
+    let hubTasks = [];
+    let activeTaskId = null; // null => "+ Nova Tarefa" mode
+
+    function renderHubTasksTabBar() {
+      const tabBar = document.getElementById('hubActiveTasksPills');
+      const btnNew = document.getElementById('btnHubNewTaskTab');
+      if (!tabBar) return;
+
+      if (btnNew) {
+        if (activeTaskId === null) {
+          btnNew.classList.remove('btn-outline');
+          btnNew.classList.add('btn-primary');
+        } else {
+          btnNew.classList.remove('btn-primary');
+          btnNew.classList.add('btn-outline');
+        }
+      }
+
+      tabBar.innerHTML = hubTasks.map((t, idx) => {
+        const isActive = t.cycleId === activeTaskId;
+        const shortScope = (t.scope || 'Tarefa ' + (idx + 1)).slice(0, 20) + '...';
+        const isWaitingSpec = t.status === 'WAITING_SPEC_APPROVAL';
+        const badgeColor = isWaitingSpec ? 'var(--itau-orange)' : (t.status === 'RUNNING' ? 'var(--itau-navy)' : 'var(--border-default)');
+        const statusText = isWaitingSpec ? 'APROVAR SPEC' : (t.status || 'RUNNING');
+        const bg = isActive ? 'var(--itau-navy)' : 'var(--bg-surface-elevated)';
+        const textCol = isActive ? '#ffffff' : 'var(--text-primary)';
+        const borderCol = isActive ? 'var(--itau-orange)' : 'var(--border-default)';
+
+        return '<div class="hub-task-pill" data-cycle-id="' + t.cycleId + '" style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 6px; border: 1px solid ' + borderCol + '; background: ' + bg + '; color: ' + textCol + '; font-size: 12px; font-weight: 600; white-space: nowrap;">' +
+          '<span>⚡ ' + shortScope + '</span>' +
+          '<span style="background: ' + badgeColor + '; color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 10px;">' + statusText + '</span>' +
+          '<span class="btn-abort-task" data-cycle-id="' + t.cycleId + '" title="Cancelar ciclo" style="cursor: pointer; opacity: 0.7; font-size: 14px; margin-left: 4px;">✕</span>' +
+        '</div>';
+      }).join('');
+
+      tabBar.querySelectorAll('.hub-task-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          selectHubTask(pill.getAttribute('data-cycle-id'));
+        });
+      });
+
+      tabBar.querySelectorAll('.btn-abort-task').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          abortHubTask(btn.getAttribute('data-cycle-id'));
+        });
+      });
+    }
+
+    function saveHubTasksToStorage() {
+      try {
+        localStorage.setItem('harness_hub_tasks', JSON.stringify(hubTasks));
+      } catch {}
+    }
+
+    window.selectHubTask = function(cycleId) {
+      activeTaskId = cycleId;
+      try {
+        localStorage.setItem('harness_hub_active_task_id', cycleId || '');
+      } catch {}
+      renderHubTasksTabBar();
+
+      const metaBar = document.getElementById('activeTaskMetaBar');
+      const specBanner = document.getElementById('specApprovalBanner');
+      const formTitle = document.getElementById('hubFormTitle');
+      const btnStartRun = document.getElementById('btnStartRun');
+
+      if (!cycleId) {
+        // "+ Nova Tarefa" mode
+        if (metaBar) metaBar.style.display = 'none';
+        if (specBanner) specBanner.style.display = 'none';
+        if (formTitle) formTitle.textContent = '🚀 Autonomous Orchestration Hub (Nova Tarefa)';
+        resetTimeline();
+        logTerminal.textContent = '[HRNS Server] Pronto para configurar e iniciar uma nova tarefa autônoma em paralelo.';
+        activeJobLabel.textContent = 'Modo: Nova Tarefa';
+        if (btnStartRun) {
+          btnStartRun.disabled = false;
+          btnStartRun.innerHTML = '<span>▶ Iniciar Ciclo Autônomo</span>';
+        }
+        return;
+      }
+
+      const task = hubTasks.find(t => t.cycleId === cycleId);
+      if (!task) return;
+
+      if (formTitle) formTitle.textContent = '🚀 Tarefa: ' + (task.scope || task.cycleId);
+
+      if (metaBar) {
+        metaBar.style.display = 'flex';
+        document.getElementById('lblActiveSessionId').textContent = task.sessionId || 'sess-none';
+        document.getElementById('lblActiveCycleId').textContent = task.cycleId;
+        document.getElementById('lblActiveWorktree').textContent = task.worktreePath || 'isolado';
+        const badge = document.getElementById('lblActiveTaskBadge');
+        if (badge) {
+          badge.textContent = task.status;
+          badge.className = 'status-badge ' + (task.status === 'RUNNING' ? 'status-connected' : 'status-reconnecting');
+        }
+      }
+
+      if (scopeInput) scopeInput.value = task.scope || '';
+      if (agentSelect) agentSelect.value = task.agent || 'antigravity-cli';
+      if (modeSelect) modeSelect.value = task.mode || 'thinking';
+
+      updateTimeline(task.currentPhase || 'BOOTSTRAP');
+
+      if (specBanner) {
+        if (task.status === 'WAITING_SPEC_APPROVAL') {
+          specBanner.style.display = 'block';
+          const specBox = document.getElementById('specSummaryBox');
+          if (specBox) specBox.textContent = task.specSummary || 'Especificação e decisões arquiteturais prontas para validação.';
+        } else {
+          specBanner.style.display = 'none';
+        }
+      }
+
+      logTerminal.textContent = task.logs && task.logs.length > 0 ? task.logs.join(String.fromCharCode(10)) : '> Aguardando saída do agente...';
+      logTerminal.scrollTop = logTerminal.scrollHeight;
+      activeJobLabel.textContent = 'Ciclo: ' + task.cycleId + ' (' + task.status + ')';
+    };
+
+    window.abortHubTask = async function(cycleId) {
+      if (!confirm('Deseja realmente cancelar este ciclo?')) return;
+      try {
+        await fetch('/orchestrator/jobs/' + cycleId + '/abort', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        await fetch('/api/cycles/' + cycleId + '/abort', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Cancelado pelo usuário no Hub' })
+        });
+      } catch {}
+
+      const interval = jobPollIntervals.get(cycleId);
+      if (interval) {
+        clearInterval(interval);
+        jobPollIntervals.delete(cycleId);
+      }
+      const es = jobEventSources.get(cycleId);
+      if (es) {
+        es.close();
+        jobEventSources.delete(cycleId);
+      }
+
+      hubTasks = hubTasks.filter(t => t.cycleId !== cycleId);
+      saveHubTasksToStorage();
+      renderHubTasksTabBar();
+      if (activeTaskId === cycleId) {
+        selectHubTask(hubTasks.length > 0 ? hubTasks[0].cycleId : null);
+      }
+    };
+
+    const btnHubNewTaskTab = document.getElementById('btnHubNewTaskTab');
+    if (btnHubNewTaskTab) {
+      btnHubNewTaskTab.onclick = () => selectHubTask(null);
+    }
+
+    // Spec Approval Actions
+    const btnApproveSpecAndDev = document.getElementById('btnApproveSpecAndDev');
+    const btnRejectSpec = document.getElementById('btnRejectSpec');
+    const btnInspectFullSpec = document.getElementById('btnInspectFullSpec');
+
+    if (btnApproveSpecAndDev) {
+      btnApproveSpecAndDev.onclick = async () => {
+        if (!activeTaskId) return;
+        btnApproveSpecAndDev.disabled = true;
+        btnApproveSpecAndDev.textContent = '⏳ Aprovando...';
+        try {
+          const res = await fetch('/api/cycles/' + activeTaskId + '/approve-spec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (res.ok) {
+            const task = hubTasks.find(t => t.cycleId === activeTaskId);
+            if (task) {
+              task.status = 'RUNNING';
+              task.currentPhase = 'DEVELOPMENT';
+              task.logs.push('[GATE] ✅ Especificação APROVADA pelo operador humano! Iniciando Desenvolvimento TDD.');
+            }
+            selectHubTask(activeTaskId);
+          } else {
+            alert('Falha ao aprovar spec.');
+          }
+        } catch (err) {
+          alert('Erro: ' + err.message);
+        } finally {
+          btnApproveSpecAndDev.disabled = false;
+          btnApproveSpecAndDev.textContent = '✅ Aprovar Spec e Iniciar Desenvolvimento';
+        }
+      };
+    }
+
+    if (btnRejectSpec) {
+      btnRejectSpec.onclick = async () => {
+        if (!activeTaskId) return;
+        const feedback = prompt('Descreva os ajustes necessários na especificação/arquitetura:');
+        if (feedback === null) return;
+        try {
+          const res = await fetch('/api/cycles/' + activeTaskId + '/reject-spec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feedback })
+          });
+          if (res.ok) {
+            const task = hubTasks.find(t => t.cycleId === activeTaskId);
+            if (task) {
+              task.status = 'RUNNING';
+              task.currentPhase = 'REFINEMENT';
+              task.logs.push('[GATE] ✏️ Ajuste de spec solicitado: ' + feedback + '. Retornando para Refinamento.');
+            }
+            selectHubTask(activeTaskId);
+          }
+        } catch (err) {
+          alert('Erro: ' + err.message);
+        }
+      };
+    }
+
+    if (btnInspectFullSpec) {
+      btnInspectFullSpec.onclick = () => {
+        if (activeTaskId) dismissedSocraticModals.delete(activeTaskId);
+        if (activeRefinementJobId) dismissedSocraticModals.delete(activeRefinementJobId);
+        handleViewSocraticQuestions();
+      };
+    }
+
+    // Multi-Job EventSources and Polling Registry
+    const jobEventSources = new Map();
+    const jobPollIntervals = new Map();
+
+    // Run Job Dispatcher (Multi-Task Hub with Real CLI Agent Execution)
     async function dispatchRunJob(payload) {
       currentQuestions = [];
-      resetTimeline();
-
-      logTerminal.textContent = '[HRNS Server] Iniciando novo ciclo de orquestração...';
-      appendLog(\`[USER] Disparando job de orquestração (Modo: \${payload.mode})...\`);
       const btnStartRun = document.getElementById('btnStartRun');
-      btnStartRun.disabled = true;
-      btnStartRun.innerHTML = '<span>⏳ Enfileirando Job...</span>';
+      if (btnStartRun) {
+        btnStartRun.disabled = true;
+        btnStartRun.innerHTML = '<span>⏳ Enfileirando Job...</span>';
+      }
 
       try {
         const res = await fetch('/orchestrator/run', {
@@ -1250,89 +1734,159 @@ Sessions (real work)
 
         if (res.ok) {
           const data = await res.json();
-          localStorage.setItem('harness_active_job_id', data.jobId);
-          appendLog(\`[SERVER] ✅ Job enfileirado com sucesso! ID: \${data.jobId}\`);
-          activeJobLabel.textContent = \`Job: \${data.jobId} (RUNNING)\`;
-          updateTimeline('BOOTSTRAP');
+          const jobId = data.jobId;
 
-          connectSseStream(data.jobId);
-          startStatusPolling(data.jobId);
+          const newTask = {
+            cycleId: jobId,
+            sessionId: 'sess-' + jobId.slice(0, 8),
+            scope: payload.scope,
+            category: 'backend',
+            agent: payload.agent,
+            mode: payload.mode,
+            status: 'RUNNING',
+            currentPhase: 'BOOTSTRAP',
+            worktreePath: (payload.project && payload.project[0] ? payload.project[0] + '/.worktrees/' + jobId : '.worktrees/' + jobId),
+            specSummary: '',
+            logs: [
+              '[SERVER] ✅ Job enfileirado com sucesso! ID: ' + jobId,
+              '[AGENT] Inicializando runner CLI: ' + payload.agent + ' (modo: ' + payload.mode + ')...',
+              '[WORKTREE] Sandbox isolado em: .worktrees/' + jobId,
+              '[PIPELINE] Fase 1: BOOTSTRAP iniciada.'
+            ]
+          };
+
+          hubTasks.push(newTask);
+          saveHubTasksToStorage();
+          renderHubTasksTabBar();
+          selectHubTask(jobId);
+
+          connectSseStream(jobId);
+          startStatusPolling(jobId);
         } else {
           const err = await res.json().catch(() => ({ message: res.statusText }));
-          appendLog(\`[ERROR] Falha ao iniciar job (\${res.status}): \${err.message || err.error}\`);
+          alert('Falha ao iniciar job (' + res.status + '): ' + (err.message || err.error));
+        }
+      } catch (err) {
+        alert('Falha de conexão: ' + err.message);
+      } finally {
+        if (btnStartRun) {
           btnStartRun.disabled = false;
           btnStartRun.innerHTML = '<span>▶ Iniciar Ciclo Autônomo</span>';
         }
-      } catch (err) {
-        appendLog(\`[ERROR] Falha de conexão: \${err.message}\`);
-        btnStartRun.disabled = false;
-        btnStartRun.innerHTML = '<span>▶ Iniciar Ciclo Autônomo</span>';
       }
     }
 
-    let activeEventSource = null;
-    let activePollInterval = null;
-
     function connectSseStream(jobId) {
-      if (activeEventSource) {
-        activeEventSource.close();
-      }
+      if (jobEventSources.has(jobId)) return;
 
       if (window.EventSource) {
-        activeEventSource = new EventSource(\`/orchestrator/stream?jobId=\${jobId}\`);
-        activeEventSource.onmessage = (event) => {
+        const es = new EventSource('/orchestrator/stream?jobId=' + jobId);
+        jobEventSources.set(jobId, es);
+        es.onmessage = (event) => {
           try {
             const item = JSON.parse(event.data);
+            const task = hubTasks.find(t => t.cycleId === jobId);
+
             if (item.type === 'log_chunk' && item.text) {
-              appendLog(item.text);
+              if (task) {
+                task.logs.push(item.text);
+                saveHubTasksToStorage();
+              }
+              if (activeTaskId === jobId) appendLog(item.text);
             } else if (item.type === 'phase_change') {
-              appendLog(\`[PIPELINE] ➔ Transição de fase: \${item.phase}\`);
-              updateTimeline(item.phase);
+              if (task) {
+                task.currentPhase = item.phase;
+                task.logs.push('[PIPELINE] ➔ Transição de fase: ' + item.phase);
+                saveHubTasksToStorage();
+              }
+              if (activeTaskId === jobId) {
+                appendLog('[PIPELINE] ➔ Transição de fase: ' + item.phase);
+                updateTimeline(item.phase);
+              }
+              renderHubTasksTabBar();
             } else if (item.type === 'interactive_refinement' && item.questions) {
-              renderAndOpenSocraticModal(item.questions, item.jobId || jobId);
+              if (task) {
+                task.status = 'WAITING_SPEC_APPROVAL';
+                task.specSummary = 'Software Architect formulou ' + item.questions.length + ' questões socráticas de refinamento.';
+                task.logs.push('[REFINEMENT] 🧠 ' + item.questions.length + ' questões prontas para validação.');
+                saveHubTasksToStorage();
+              }
+              renderHubTasksTabBar();
+              if (activeTaskId === jobId && !dismissedSocraticModals.has(jobId)) {
+                renderAndOpenSocraticModal(item.questions, jobId);
+              }
             } else if (item.type === 'status_change') {
-              appendLog(\`[STATUS] Job \${item.jobId}: \${item.status}\`);
+              if (task) {
+                task.status = item.status.toUpperCase();
+                task.logs.push('[STATUS] Job ' + jobId + ': ' + item.status);
+                saveHubTasksToStorage();
+              }
+              renderHubTasksTabBar();
+              if (activeTaskId === jobId) {
+                appendLog('[STATUS] Job ' + jobId + ': ' + item.status);
+              }
             }
           } catch {
-            appendLog(\`[SSE] \${event.data}\`);
+            if (activeTaskId === jobId) appendLog('[SSE] ' + event.data);
           }
         };
-        activeEventSource.onerror = () => {
+        es.onerror = () => {
           // SSE reconnects automatically
         };
       }
     }
 
     function startStatusPolling(jobId) {
-      if (activePollInterval) clearInterval(activePollInterval);
-      const btnStartRun = document.getElementById('btnStartRun');
+      if (jobPollIntervals.has(jobId)) return;
 
-      activePollInterval = setInterval(async () => {
+      const interval = setInterval(async () => {
         try {
-          const statusRes = await fetch(\`/orchestrator/status/\${jobId}\`);
+          const statusRes = await fetch('/orchestrator/status/' + jobId);
           if (statusRes.ok) {
             const statusData = await statusRes.json();
-            if (statusData.phase) updateTimeline(statusData.phase);
-            if (statusData.pendingRefinement && statusData.pendingRefinement.length > 0 && !socraticModal.classList.contains('open')) {
-              renderAndOpenSocraticModal(statusData.pendingRefinement, jobId);
+            const task = hubTasks.find(t => t.cycleId === jobId);
+            if (task && statusData.phase) {
+              task.currentPhase = statusData.phase;
+              if (activeTaskId === jobId) updateTimeline(statusData.phase);
+            }
+            if (statusData.pendingRefinement && statusData.pendingRefinement.length > 0) {
+              if (task) {
+                task.status = 'WAITING_SPEC_APPROVAL';
+                task.specSummary = statusData.pendingRefinement.length + ' questões de arquitetura aguardando validação.';
+                saveHubTasksToStorage();
+              }
+              renderHubTasksTabBar();
+              if (activeTaskId === jobId && !dismissedSocraticModals.has(jobId) && !socraticModal.classList.contains('open')) {
+                renderAndOpenSocraticModal(statusData.pendingRefinement, jobId);
+              }
             }
             if (statusData.status === 'completed' || statusData.status === 'failed' || statusData.status === 'aborted') {
-              appendLog(\`[SERVER] Job finalizado com status: \${statusData.status.toUpperCase()}\`);
-              activeJobLabel.textContent = \`Job: \${statusData.jobId || jobId} (\${statusData.status.toUpperCase()})\`;
-              clearInterval(activePollInterval);
-              activePollInterval = null;
-              if (activeEventSource) activeEventSource.close();
-              btnStartRun.disabled = false;
-              btnStartRun.innerHTML = '<span>▶ Iniciar Ciclo Autônomo</span>';
+              if (task) {
+                task.status = statusData.status.toUpperCase();
+                task.logs.push('[SERVER] Job finalizado com status: ' + statusData.status.toUpperCase());
+                saveHubTasksToStorage();
+              }
+              renderHubTasksTabBar();
+              if (activeTaskId === jobId) {
+                appendLog('[SERVER] Job finalizado com status: ' + statusData.status.toUpperCase());
+                activeJobLabel.textContent = 'Job: ' + jobId + ' (' + statusData.status.toUpperCase() + ')';
+              }
+              clearInterval(interval);
+              jobPollIntervals.delete(jobId);
+              const es = jobEventSources.get(jobId);
+              if (es) {
+                es.close();
+                jobEventSources.delete(jobId);
+              }
             }
           }
         } catch {}
       }, 2500);
+      jobPollIntervals.set(jobId, interval);
     }
 
-    // Auto-Restore State on Page Load / F5 Refresh
+    // Auto-Restore State on Page Load (Instant Cache + Dynamic Server Sync)
     async function restoreActiveJobOnLoad() {
-      // Restore last saved folder & scope
       const savedFolder = localStorage.getItem('harness_last_project_path');
       if (savedFolder && projectInput) {
         projectInput.value = savedFolder;
@@ -1342,115 +1896,165 @@ Sessions (real work)
         scopeInput.value = savedScope;
       }
 
+      // 1. Instant hydration from client localStorage cache
       try {
-        const savedJobId = localStorage.getItem('harness_active_job_id');
-        let statusData = null;
-
-        if (savedJobId) {
-          const res = await fetch(\`/orchestrator/status/\${savedJobId}\`);
-          if (res.ok) {
-            statusData = await res.json();
-          }
-        }
-
-        if (!statusData) {
-          const latestRes = await fetch('/orchestrator/jobs/latest');
-          if (latestRes.ok) {
-            const data = await latestRes.json();
-            if (data && data.jobId) {
-              statusData = data;
+        const cached = localStorage.getItem('harness_hub_tasks');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            hubTasks = parsed;
+            renderHubTasksTabBar();
+            const savedActiveId = localStorage.getItem('harness_hub_active_task_id');
+            if (savedActiveId && hubTasks.some(t => t.cycleId === savedActiveId)) {
+              selectHubTask(savedActiveId);
+            } else if (hubTasks.length > 0) {
+              selectHubTask(hubTasks[0].cycleId);
             }
           }
         }
+      } catch {}
 
-        if (statusData && statusData.jobId) {
-          if (statusData.scope && scopeInput) {
-            scopeInput.value = statusData.scope;
-            localStorage.setItem('harness_last_scope', statusData.scope);
-          }
+      // 2. Dynamic server synchronization: query active jobs and reconcile state
+      try {
+        const res = await fetch('/orchestrator/jobs/active');
+        if (res.ok) {
+          const data = await res.json();
+          const serverActiveJobs = data.activeJobs || [];
 
-          if (statusData.status === 'running' || statusData.status === 'waiting_for_input' || statusData.status === 'queued') {
-            localStorage.setItem('harness_active_job_id', statusData.jobId);
-            activeJobLabel.textContent = \`Job: \${statusData.jobId} (\${statusData.status.toUpperCase()})\`;
-            
-            appendLog(\`[RECOVERY] 🔄 Sessão ativa conectada: \${statusData.jobId} | Fase Atual: \${statusData.phase || 'BOOTSTRAP'}\`);
+          for (const sJob of serverActiveJobs) {
+            const jId = sJob.jobId;
+            let task = hubTasks.find(t => t.cycleId === jId);
 
-            // Replay buffered execution logs
-            if (statusData.historyLogs && statusData.historyLogs.length > 0) {
-              logTerminal.textContent = '';
-              statusData.historyLogs.forEach(evt => {
-                if (evt.type === 'log_chunk' && evt.text) {
-                  appendLog(evt.text);
-                } else if (evt.type === 'phase_change') {
-                  appendLog(\`[PIPELINE] ➔ Transição de fase: \${evt.phase}\`);
+            try {
+              const statusRes = await fetch('/orchestrator/status/' + jId);
+              if (statusRes.ok) {
+                const sData = await statusRes.json();
+                const taskScope = sData.scope || (sJob.request && sJob.request.scope) || ('Tarefa ' + jId.slice(0, 8));
+                const taskAgent = (sJob.request && sJob.request.agent) || 'antigravity-cli';
+                const taskMode = (sJob.request && sJob.request.mode) || 'thinking';
+                const taskStatus = sData.pendingRefinement ? 'WAITING_SPEC_APPROVAL' : (sData.status ? sData.status.toUpperCase() : 'RUNNING');
+                const taskPhase = sData.phase || 'BOOTSTRAP';
+
+                let logs = [];
+                if (sData.historyLogs && Array.isArray(sData.historyLogs) && sData.historyLogs.length > 0) {
+                  logs = sData.historyLogs.map(item => {
+                    if (typeof item === 'string') return item;
+                    if (item.text) return item.text;
+                    if (item.type === 'phase_change') return '[PIPELINE] ➔ Transição de fase: ' + item.phase;
+                    return JSON.stringify(item);
+                  });
+                } else if (task && task.logs && task.logs.length > 0) {
+                  logs = task.logs;
+                } else {
+                  logs = [
+                    '[RESTORE] ✅ Sessão recuperada dinamicamente: ' + jId,
+                    '[STATUS] ' + taskStatus + ' | Fase: ' + taskPhase
+                  ];
                 }
-              });
-            }
 
-            if (statusData.phase) {
-              updateTimeline(statusData.phase);
-            }
+                if (!task) {
+                  task = {
+                    cycleId: jId,
+                    sessionId: 'sess-' + jId.slice(0, 8),
+                    scope: taskScope,
+                    category: 'backend',
+                    agent: taskAgent,
+                    mode: taskMode,
+                    status: taskStatus,
+                    currentPhase: taskPhase,
+                    worktreePath: sJob.workspacePath ? sJob.workspacePath + '/.worktrees/' + jId : '.worktrees/' + jId,
+                    specSummary: sData.pendingRefinement ? (sData.pendingRefinement.length + ' questões de arquitetura aguardando validação.') : '',
+                    logs: logs
+                  };
+                  hubTasks.push(task);
+                } else {
+                  task.status = taskStatus;
+                  task.currentPhase = taskPhase;
+                  if (logs.length >= task.logs.length) {
+                    task.logs = logs;
+                  }
+                  if (sData.pendingRefinement) {
+                    task.status = 'WAITING_SPEC_APPROVAL';
+                    task.specSummary = sData.pendingRefinement.length + ' questões de arquitetura aguardando validação.';
+                  }
+                }
 
-            if (statusData.pendingRefinement && statusData.pendingRefinement.length > 0) {
-              currentQuestions = statusData.pendingRefinement;
-              if (!socraticModal.classList.contains('open')) {
-                renderAndOpenSocraticModal(statusData.pendingRefinement, statusData.jobId);
+                // Reconnect SSE streaming and polling for ongoing jobs
+                if (taskStatus === 'RUNNING' || taskStatus === 'QUEUED' || taskStatus === 'WAITING_SPEC_APPROVAL' || taskStatus === 'WAITING_FOR_INPUT') {
+                  connectSseStream(jId);
+                  startStatusPolling(jId);
+                }
+              }
+            } catch {}
+          }
+        }
+      } catch {}
+
+      // 3. Reconcile any cached tasks that were RUNNING to check if they completed
+      for (const t of hubTasks) {
+        if (!jobPollIntervals.has(t.cycleId) && (t.status === 'RUNNING' || t.status === 'QUEUED' || t.status === 'WAITING_SPEC_APPROVAL')) {
+          try {
+            const sRes = await fetch('/orchestrator/status/' + t.cycleId);
+            if (sRes.ok) {
+              const sData = await sRes.json();
+              t.status = sData.pendingRefinement ? 'WAITING_SPEC_APPROVAL' : (sData.status ? sData.status.toUpperCase() : t.status);
+              t.currentPhase = sData.phase || t.currentPhase;
+              if (sData.historyLogs && Array.isArray(sData.historyLogs) && sData.historyLogs.length > t.logs.length) {
+                t.logs = sData.historyLogs.map(item => typeof item === 'string' ? item : (item.text || JSON.stringify(item)));
+              }
+              if (t.status === 'RUNNING' || t.status === 'QUEUED' || t.status === 'WAITING_SPEC_APPROVAL') {
+                connectSseStream(t.cycleId);
+                startStatusPolling(t.cycleId);
               }
             }
-
-            const btnStartRun = document.getElementById('btnStartRun');
-            btnStartRun.disabled = true;
-            btnStartRun.innerHTML = '<span>⏳ Executando Job...</span>';
-
-            connectSseStream(statusData.jobId);
-            startStatusPolling(statusData.jobId);
-          } else if (statusData.status === 'halted' || statusData.status === 'paused') {
-            localStorage.setItem('harness_active_job_id', statusData.jobId);
-            activeJobLabel.textContent = \`Job: \${statusData.jobId} (PAUSADO)\`;
-            appendLog(\`[RECOVERY] ⏸️ Sessão pausada na fase \${statusData.phase || 'BOOTSTRAP'}. Clique em Iniciar para continuar a execução.\`);
-            if (statusData.phase) {
-              updateTimeline(statusData.phase);
-            }
-          } else {
-            resetTimeline();
-            activeJobLabel.textContent = \`Job: \${statusData.jobId} (\${statusData.status.toUpperCase()})\`;
-          }
-        } else {
-          resetTimeline();
+          } catch {}
         }
-      } catch (err) {
-        resetTimeline();
+      }
+
+      renderHubTasksTabBar();
+      saveHubTasksToStorage();
+
+      const lastActiveId = localStorage.getItem('harness_hub_active_task_id');
+      if (lastActiveId && hubTasks.some(t => t.cycleId === lastActiveId)) {
+        selectHubTask(lastActiveId);
+      } else if (hubTasks.length > 0 && activeTaskId === null) {
+        selectHubTask(hubTasks[0].cycleId);
       }
     }
 
     restoreActiveJobOnLoad();
 
-    // Run Form Submit
+    // Run Form Submit (Parallel Task Dispatch with Real CLI Execution)
     const runForm = document.getElementById('runForm');
     runForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const scope = document.getElementById('scopeInput').value;
+      const scope = document.getElementById('scopeInput').value.trim();
       const agent = document.getElementById('agentSelect').value;
       const mode = document.getElementById('modeSelect').value;
-      const project = document.getElementById('projectInput').value;
-      const idempotencyKey = 'web-job-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      const project = document.getElementById('projectInput').value.trim();
 
-      const payload = {
+      if (!scope) {
+        alert('Por favor, informe o escopo da tarefa.');
+        return;
+      }
+
+      await dispatchRunJob({
         scope,
         agent,
         mode,
         project: [project],
-        idempotencyKey,
-        action: 'reset'
-      };
-
-      await dispatchRunJob(payload);
+        idempotencyKey: 'job-' + Date.now(),
+        action: 'reset',
+        parallel: true
+      });
     });
 
     // Abort and Clean Current Job Execution
-    const btnAbortJob = document.getElementById('btnAbortJob');
-
     async function handleAbortJob() {
+      if (activeTaskId) {
+        await abortHubTask(activeTaskId);
+        return;
+      }
       const activeJobId = localStorage.getItem('harness_active_job_id');
 
       if (!confirm('Deseja realmente cancelar e excluir a execução atual para reiniciar?')) {
