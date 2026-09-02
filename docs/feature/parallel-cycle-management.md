@@ -34,11 +34,7 @@ Orquestração concorrente de múltiplos ciclos autônomos simultâneos, mapeand
     "sdk/src/server/adapters/outbound/services/WorktreeIsolationProvider.ts"
   ],
   "code_files": [
-    "sdk/src/server/domain/aggregates/AutonomousCycleSession.ts",
-    "sdk/src/server/adapters/outbound/services/WorktreeIsolationProvider.ts",
     "sdk/src/server/application/use-cases/ParallelCycleCoordinator.ts",
-    "sdk/src/server/adapters/inbound/http/routes/ParallelCycleRoutes.ts",
-    "sdk-web/src/views/orchestrator/components/ParallelCycleModal.ts",
     "sdk/src/server/adapters/inbound/http/web/WebUiRenderer.ts"
   ],
   "test_files": [

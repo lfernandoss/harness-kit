@@ -28,18 +28,13 @@ Provides automated end-to-end integration and stress test suites verifying sessi
   "entrypoints": [
     "sdk/src/test-fixtures/MultiCycleTestHarness.ts"
   ],
-  "registration_files": [
-    "sdk/src/test-fixtures/MultiCycleTestHarness.ts"
-  ],
+  "registration_files": [],
   "reference_files": [
     "sdk/src/__tests__/e2e/MultiCycleSessionLifecycle.e2e.spec.ts"
   ],
-  "code_files": [
-    "sdk/src/test-fixtures/MultiCycleTestHarness.ts"
-  ],
+  "code_files": [],
   "test_files": [
     "sdk/src/test-fixtures/__tests__/MultiCycleTestHarness.spec.ts",
-    "sdk/src/__tests__/e2e/MultiCycleSessionLifecycle.e2e.spec.ts",
     "sdk/src/__tests__/e2e/MultiCycleSseResumption.e2e.spec.ts",
     "sdk/src/__tests__/e2e/ProcessTreeTermination.e2e.spec.ts",
     "sdk-web/src/__tests__/e2e/SwimlaneDashboardIntegration.e2e.spec.ts"

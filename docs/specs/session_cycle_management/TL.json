@@ -1,6 +1,0 @@
-{
-  "featureId": "F001",
-  "score": 0.95,
-  "openPoints": [],
-  "architectureTip": "Consider extracting an in-memory session index cache within FileSessionRepository to further optimize high-concurrency listing queries under large workspace histories."
-}

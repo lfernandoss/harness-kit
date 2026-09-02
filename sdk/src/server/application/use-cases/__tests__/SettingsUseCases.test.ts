@@ -384,5 +384,74 @@ describe('Settings Use Cases (Local Project Mode & Mandatory Identifier Rule)', 
       expect(result.targetPath).toBe(join(testWorkspaceDir, '.harness-kit', 'settings.json'))
     })
   })
+
+  describe('UpdateSettingsUseCase — Patch-Based Deep Merging & Model Configuration', () => {
+    it('updates runner defaultModel and defaultEffort while preserving phase timeouts and siblings', async () => {
+      process.env.PROJECT_MAPPINGS = JSON.stringify({
+        backend: testWorkspaceDir,
+      })
+
+      const settingsFilePath = join(testWorkspaceDir, '.harness-kit', 'settings.json')
+      mkdirSync(join(testWorkspaceDir, '.harness-kit'), { recursive: true })
+      writeFileSync(settingsFilePath, JSON.stringify({
+        antigravity: {
+          timeoutMs: 1800000,
+          phases: {
+            bootstrap: { timeoutMs: 60000 },
+            planning: { model: 'gemini-3.7-pro' }
+          }
+        },
+        claude: {
+          timeoutMs: 900000
+        }
+      }, null, 2), 'utf-8')
+
+      const updateUseCase = new UpdateSettingsUseCase()
+      const payload = {
+        project: 'backend',
+        agent: 'antigravity',
+        defaultModel: 'gemini-3.7-flash',
+        defaultEffort: 'medium',
+      }
+
+      const result = await updateUseCase.execute(payload)
+      expect(result.settings.antigravity.defaultModel).toBe('gemini-3.7-flash')
+      expect(result.settings.antigravity.defaultEffort).toBe('medium')
+      expect(result.settings.antigravity.timeoutMs).toBe(1800000)
+      expect(result.settings.claude.timeoutMs).toBe(900000)
+
+      const saved = JSON.parse(readFileSync(settingsFilePath, 'utf-8'))
+      expect(saved.antigravity.defaultModel).toBe('gemini-3.7-flash')
+      expect(saved.antigravity.defaultEffort).toBe('medium')
+      expect(saved.antigravity.timeoutMs).toBe(1800000)
+      expect(saved.claude.timeoutMs).toBe(900000)
+    })
+
+    it('rejects patch with invalid model identifier and leaves file unmodified', async () => {
+      process.env.PROJECT_MAPPINGS = JSON.stringify({
+        backend: testWorkspaceDir,
+      })
+
+      const settingsFilePath = join(testWorkspaceDir, '.harness-kit', 'settings.json')
+      mkdirSync(join(testWorkspaceDir, '.harness-kit'), { recursive: true })
+      const initialContent = JSON.stringify({
+        cursor: { defaultModel: 'gpt-5.6-sol' }
+      }, null, 2)
+      writeFileSync(settingsFilePath, initialContent, 'utf-8')
+
+      const updateUseCase = new UpdateSettingsUseCase()
+      const invalidPayload = {
+        project: 'backend',
+        agent: 'cursor',
+        model: 'invalid model; rm -rf /',
+      }
+
+      await expect(updateUseCase.execute(invalidPayload)).rejects.toThrow()
+
+      const contentAfter = readFileSync(settingsFilePath, 'utf-8')
+      expect(contentAfter).toBe(initialContent)
+    })
+  })
 })
+
 

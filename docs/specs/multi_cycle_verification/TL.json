@@ -1,6 +1,0 @@
-{
-  "featureId": "F003",
-  "score": 0.98,
-  "openPoints": [],
-  "architectureTip": "Integrate automated flakiness retry decorators on network-bound SSE tests to protect CI pipelines against non-deterministic OS socket scheduling delays under high load."
-}

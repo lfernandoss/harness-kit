@@ -26,17 +26,13 @@ Suíte completa de testes de ponta a ponta (E2E) e validação automatizada para
   ],
   "registration_files": [],
   "reference_files": [
-    "sdk-web/test/e2e/multi-tab-resilience.e2e.ts",
     "sdk-web/test/e2e/theme-a11y.e2e.ts"
   ],
   "code_files": [
-    "sdk-web/test/e2e/feature-views.e2e.ts"
+    "sdk-web/test/e2e/multi-tab-resilience.e2e.ts"
   ],
   "test_files": [
-    "sdk-web/test/e2e/feature-views.e2e.ts",
-    "sdk-web/test/e2e/multi-tab-resilience.e2e.ts",
-    "sdk-web/test/e2e/orchestration-workflow.e2e.ts",
-    "sdk-web/test/e2e/theme-a11y.e2e.ts"
+    "sdk-web/test/e2e/feature-views.e2e.ts"
   ]
 }
 ```

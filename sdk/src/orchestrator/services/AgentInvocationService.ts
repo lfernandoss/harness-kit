@@ -46,8 +46,8 @@ export class AgentInvocationService {
       timeoutMs: timeoutMs
     }
 
-    if (settingKey && phaseKey) {
-      const overrides = settings.resolve(settingKey, phaseKey)
+    if (settingKey) {
+      const overrides = settings.resolve(settingKey, phaseKey ?? '')
       if (overrides.model || overrides.effort) {
         finalInvocation = {
           ...finalInvocation,

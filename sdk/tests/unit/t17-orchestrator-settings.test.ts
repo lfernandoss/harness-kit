@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { join } from 'path'
-import { existsSync, rmSync, writeFileSync, mkdirSync } from 'fs'
+import { existsSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { HarnessOrchestrator } from '../../src/orchestrator/HarnessOrchestrator'
 import { HarnessSettings } from '../../src/settings/HarnessSettings'
@@ -130,4 +130,72 @@ describe('T17 — Orchestrator Settings Overrides', () => {
 
     expect(spy).toHaveBeenCalledWith(expect.any(Function), 9999)
   })
+
+  it('TC-CLI-01: cmdSettings set updates runner defaultModel and effort declaratively', async () => {
+    const { cmdSettings } = await import('../../src/cli/services/settings-service.js')
+    const localSettingsFile = join(tmpDir, '.harness-kit', 'settings.json')
+
+    await cmdSettings(tmpDir, ['set', 'antigravity', '--model', 'gemini-3.7-flash', '--effort', 'high', '--scope', 'local'])
+
+    expect(existsSync(localSettingsFile)).toBe(true)
+    const saved = JSON.parse(readFileSync(localSettingsFile, 'utf-8'))
+    expect(saved.antigravity.defaultModel).toBe('gemini-3.7-flash')
+    expect(saved.antigravity.defaultEffort).toBe('high')
+  })
+
+  it('TC-CLI-02: cmdSettings set updates phase-specific override declaratively', async () => {
+    const { cmdSettings } = await import('../../src/cli/services/settings-service.js')
+    const localSettingsFile = join(tmpDir, '.harness-kit', 'settings.json')
+
+    await cmdSettings(tmpDir, ['set', 'claude', '--phase', 'planning', '--model', 'claude-3-7-sonnet', '--effort', 'high', '--scope', 'local'])
+
+    expect(existsSync(localSettingsFile)).toBe(true)
+    const saved = JSON.parse(readFileSync(localSettingsFile, 'utf-8'))
+    expect(saved.claude.phases.planning.model).toBe('claude-3-7-sonnet')
+    expect(saved.claude.phases.planning.effort).toBe('high')
+  })
+
+  it('TC-CLI-03: cmdSettings set outputs JSON when --json flag is passed', async () => {
+    const { cmdSettings } = await import('../../src/cli/services/settings-service.js')
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await cmdSettings(tmpDir, ['set', 'cursor', '--model', 'gpt-5.6-sol', '--scope', 'local', '--json'])
+
+    expect(logSpy).toHaveBeenCalled()
+    const lastCall = logSpy.mock.calls[logSpy.mock.calls.length - 1][0]
+    const parsed = JSON.parse(lastCall)
+    expect(parsed.status).toBe('SUCCESS')
+    expect(parsed.settings.cursor.defaultModel).toBe('gpt-5.6-sol')
+  })
+
+  it('TC-INVOKE-01: AgentInvocationService applies runner defaultModel when phase model is absent', async () => {
+    const fakeRunner = new FakeAgentRunner()
+    Object.defineProperty(fakeRunner, 'type', { value: 'antigravity-cli', writable: true })
+
+    const customSettingsMap = {
+      'antigravity': {
+        defaultModel: 'gemini-3.7-flash',
+        defaultEffort: 'medium',
+        phases: {}
+      }
+    }
+    const settings = new (HarnessSettings as any)(customSettingsMap)
+
+    const orchestrator = new HarnessOrchestrator({
+      scope: 'test-scope',
+      projectPaths: [tmpDir],
+      agentRunner: fakeRunner,
+      productDir: join(tmpDir, 'docs', 'product'),
+      settings,
+      complexity: Complexity.AUTO,
+    }, { workingDir: tmpDir })
+
+    await orchestrator.runBootstrapOnly()
+
+    const calls = fakeRunner.invocations
+    expect(calls.length).toBeGreaterThan(0)
+    expect(calls[0]).toHaveProperty('model', 'gemini-3.7-flash')
+    expect(calls[0]).toHaveProperty('effort', 'medium')
+  })
 })
+

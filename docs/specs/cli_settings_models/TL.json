@@ -1,0 +1,6 @@
+{
+  "featureId": "F001",
+  "score": 1.00,
+  "openPoints": [],
+  "architectureTip": "Maintain unified validation schemas and atomic persistence ports across CLI and Web adapters to preserve Clean Architecture integrity."
+}

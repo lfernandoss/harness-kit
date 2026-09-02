@@ -125,4 +125,87 @@ describe('T16 — HarnessSettings', () => {
       effort: 'xhigh',
     })
   })
+
+  describe('SettingsValidator — Model Sanitization & Effort Validation', () => {
+    it('validates correct model identifiers', async () => {
+      const { SettingsValidator, validateSettingsMap } = await import('../../src/settings/SettingsValidator')
+      expect(() => SettingsValidator.validateModel('gemini-3.7-flash')).not.toThrow()
+      expect(() => SettingsValidator.validateModel('anthropic.claude-5-sonnet:latest')).not.toThrow()
+      expect(() => SettingsValidator.validateModel('gpt-5.6_luna/v2')).not.toThrow()
+
+      const diag = validateSettingsMap({
+        antigravity: {
+          defaultModel: 'gemini-3.7-flash',
+          defaultEffort: 'high',
+          phases: {
+            planning: { model: 'gemini-3.7-pro', effort: 'medium' }
+          }
+        }
+      })
+      expect(diag.valid).toBe(true)
+      expect(diag.errors).toHaveLength(0)
+    })
+
+    it('rejects model with shell metacharacters', async () => {
+      const { SettingsValidator, validateSettingsMap } = await import('../../src/settings/SettingsValidator')
+      expect(() => SettingsValidator.validateModel('gpt-4; rm -rf /')).toThrow(/Invalid model identifier/)
+      expect(() => SettingsValidator.validateModel('claude & echo hacked')).toThrow(/Invalid model identifier/)
+      expect(() => SettingsValidator.validateModel('model with space')).toThrow(/Invalid model identifier/)
+
+      const diag = validateSettingsMap({
+        claude: {
+          defaultModel: 'claude-3-5; evil-cmd'
+        }
+      })
+      expect(diag.valid).toBe(false)
+      expect(diag.errors.some(e => e.path === 'claude.defaultModel')).toBe(true)
+    })
+
+    it('rejects model with leading flag prefix', async () => {
+      const { SettingsValidator, validateSettingsMap } = await import('../../src/settings/SettingsValidator')
+      expect(() => SettingsValidator.validateModel('--dangerously-skip-permissions')).toThrow(/Invalid model identifier/)
+      expect(() => SettingsValidator.validateModel('-m')).toThrow(/Invalid model identifier/)
+
+      const diag = validateSettingsMap({
+        cursor: {
+          phases: {
+            planning: { model: '--flag-injection' }
+          }
+        }
+      })
+      expect(diag.valid).toBe(false)
+      expect(diag.errors.some(e => e.path === 'cursor.phases.planning.model')).toBe(true)
+    })
+
+    it('validates allowed effort levels', async () => {
+      const { SettingsValidator, validateSettingsMap } = await import('../../src/settings/SettingsValidator')
+      for (const level of ['low', 'medium', 'high', 'xhigh']) {
+        expect(() => SettingsValidator.validateEffort(level)).not.toThrow()
+      }
+
+      const diag = validateSettingsMap({
+        copilot: {
+          defaultEffort: 'xhigh',
+          phases: {
+            bootstrap: { effort: 'low' }
+          }
+        }
+      })
+      expect(diag.valid).toBe(true)
+    })
+
+    it('rejects unknown effort string', async () => {
+      const { SettingsValidator, validateSettingsMap } = await import('../../src/settings/SettingsValidator')
+      expect(() => SettingsValidator.validateEffort('extreme')).toThrow(/Invalid effort level/)
+      expect(() => SettingsValidator.validateEffort('ultra')).toThrow(/Invalid effort level/)
+
+      const diag = validateSettingsMap({
+        copilot: {
+          defaultEffort: 'unsupported-level'
+        }
+      })
+      expect(diag.valid).toBe(false)
+      expect(diag.errors.some(e => e.path === 'copilot.defaultEffort')).toBe(true)
+    })
+  })
 })

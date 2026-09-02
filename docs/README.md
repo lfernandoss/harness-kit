@@ -13,8 +13,11 @@ Index of project technical documentation for **HarnessKit**. Use the links below
 | [**antigravity-cli-validation.md**](./feature/antigravity-cli-validation.md) | Google Antigravity CLI runner validation, stdin streaming, and session continuity. | Optional |
 | [**diagnostics-candidate-review.md**](./feature/diagnostics-candidate-review.md) | Diagnostics session ledger analysis, batch execution, and Meta-Harness candidate diff review. | Optional |
 | [**e2e-web-validation.md**](./feature/e2e-web-validation.md) | End-to-end automated testing suite for sdk-web workflows, SSE streaming, and WCAG AA a11y. | Optional |
+| [**multi-cycle-verification.md**](./feature/multi-cycle-verification.md) | Multi-cycle orchestration and session reuse automated verification suite. | Optional |
 | [**orchestration-execution.md**](./feature/orchestration-execution.md) | Live orchestration dashboard with runner controls, real-time SSE log streaming, and mid-run steering. | Optional |
-| [**settings-management.md**](./feature/settings-management.md) | Dual-mode visual and raw JSON settings management with atomic disk persistence. | Optional |
+| [**parallel-cycle-management.md**](./feature/parallel-cycle-management.md) | Parallel cycle management with dedicated 1:1 sessions and Git Worktree isolation. | Optional |
+| [**session-cycle-management.md**](./feature/session-cycle-management.md) | Multi-cycle session lifecycle, atomic multi-manifest persistence, and process supervision. | Optional |
+| [**settings-management.md**](./feature/settings-management.md) | Unified dual-mode web and CLI settings management with fallback model resolution and atomic persistence. | Optional |
 | [**telemetry-analytics.md**](./feature/telemetry-analytics.md) | Telemetry dashboard displaying multidimensional token costs, prompt cache savings, and audit export. | Optional |
 | [**web-shell-theme.md**](./feature/web-shell-theme.md) | Application shell featuring Itaú Unibanco design tokens, light/dark theme switch, and responsive layout. | Optional |
 | [**workspace-initialization.md**](./feature/workspace-initialization.md) | Interactive workspace initialization wizard with file inspection and overwrite protection. | Optional |
@@ -25,4 +28,4 @@ If an exact path is supplied, read it directly. Otherwise use this order:
 
 1. **.digest.md** — fast AI orientation (architecture pattern, stack, test commands).
 2. **.graph.json** — macro relation graph index for 1-hop document lookup.
-3. Selected ADR or feature documents only when their design context is required.\n
+3. Selected ADR or feature documents only when their design context is required.

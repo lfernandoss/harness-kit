@@ -142,62 +142,74 @@ export class UpdateSettingsUseCase implements IUpdateSettingsUseCase {
     const effectiveAgent = rawAgent.trim()
     const agentKey = normalizeAgentKey(effectiveAgent)
 
-    const rawPhases = (settingsPayload as any).phases
-    let targetPhases: string[] = []
-
-    if (Array.isArray(rawPhases)) {
-      for (const item of rawPhases) {
-        const parts = String(item).split('|')
-        for (const p of parts) {
-          const clean = p.trim().toLowerCase()
-          if (VALID_PHASE_KEYS.includes(clean)) {
-            targetPhases.push(clean)
-          }
-        }
-      }
-    } else if (typeof rawPhases === 'string') {
-      const parts = rawPhases.split('|')
-      for (const p of parts) {
-        const clean = p.trim().toLowerCase()
-        if (VALID_PHASE_KEYS.includes(clean)) {
-          targetPhases.push(clean)
-        }
-      }
-    }
-
-    if (targetPhases.length === 0) {
-      targetPhases = [...VALID_PHASE_KEYS]
-    }
-
     const defaultAgentSettings = DEFAULT_SETTINGS[agentKey] ?? { timeoutMs: DEFAULT_PHASE_TIMEOUT_MS, phases: {} }
     const defaultPhases = defaultAgentSettings.phases ?? {}
     const existingAgentSettings = existingSettings[agentKey] ?? {}
     const existingPhases = existingAgentSettings.phases ?? {}
 
-    const updatedPhases: Record<string, PhaseSettings> = {}
-
+    const rawPhases = (settingsPayload as any).phases
     const newModel =
       typeof (settingsPayload as any).model === 'string' && (settingsPayload as any).model.trim() !== ''
         ? (settingsPayload as any).model.trim()
         : undefined
-    const newEffort =
+    const rawEffort =
       typeof (settingsPayload as any).effort === 'string' && (settingsPayload as any).effort.trim() !== ''
         ? (settingsPayload as any).effort.trim()
         : undefined
+    const newEffort = rawEffort === 'string' ? undefined : rawEffort
 
-    for (const phase of VALID_PHASE_KEYS) {
-      const existingPhase = existingPhases[phase] ?? {}
-      const defaultPhase = defaultPhases[phase] ?? {}
+    const hasPhaseUpdates = rawPhases !== undefined || newModel !== undefined || newEffort !== undefined
 
-      if (targetPhases.includes(phase)) {
-        updatedPhases[phase] = {
-          model: newModel ?? existingPhase.model ?? defaultPhase.model ?? '',
-          effort: newEffort !== undefined ? newEffort : (existingPhase.effort ?? defaultPhase.effort ?? ''),
+    let updatedPhases: Record<string, PhaseSettings> = { ...existingPhases }
+
+    if (hasPhaseUpdates) {
+      if (typeof rawPhases === 'object' && rawPhases !== null && !Array.isArray(rawPhases)) {
+        for (const [pKey, pVal] of Object.entries(rawPhases)) {
+          const cleanKey = pKey.trim().toLowerCase()
+          const prev = updatedPhases[cleanKey] ?? {}
+          updatedPhases[cleanKey] = {
+            ...prev,
+            ...(pVal as PhaseSettings)
+          }
         }
       } else {
-        updatedPhases[phase] = {
-          model: existingPhase.model ?? defaultPhase.model ?? '',
-          effort: existingPhase.effort ?? defaultPhase.effort ?? '',
+        let targetPhases: string[] = []
+        if (Array.isArray(rawPhases)) {
+          for (const item of rawPhases) {
+            const parts = String(item).split('|')
+            for (const p of parts) {
+              const clean = p.trim().toLowerCase()
+              if (VALID_PHASE_KEYS.includes(clean)) targetPhases.push(clean)
+            }
+          }
+        } else if (typeof rawPhases === 'string') {
+          const parts = rawPhases.split('|')
+          for (const p of parts) {
+            const clean = p.trim().toLowerCase()
+            if (VALID_PHASE_KEYS.includes(clean)) targetPhases.push(clean)
+          }
+        }
+
+        if (targetPhases.length === 0 && (newModel !== undefined || newEffort !== undefined)) {
+          targetPhases = [...VALID_PHASE_KEYS]
+        }
+
+        for (const phase of VALID_PHASE_KEYS) {
+          const existingPhase = existingPhases[phase] ?? {}
+          const defaultPhase = defaultPhases[phase] ?? {}
+
+          if (targetPhases.includes(phase)) {
+            updatedPhases[phase] = {
+              ...existingPhase,
+              model: (newModel !== undefined && newModel !== 'string') ? newModel : (existingPhase.model ?? defaultPhase.model ?? ''),
+              effort: newEffort !== undefined ? newEffort : (existingPhase.effort ?? defaultPhase.effort ?? ''),
+            }
+          } else if (!updatedPhases[phase]) {
+            updatedPhases[phase] = {
+              model: existingPhase.model ?? defaultPhase.model ?? '',
+              effort: existingPhase.effort ?? defaultPhase.effort ?? '',
+            }
+          }
         }
       }
     }
@@ -218,12 +230,40 @@ export class UpdateSettingsUseCase implements IUpdateSettingsUseCase {
       timeoutMs = defaultAgentSettings.timeoutMs ?? DEFAULT_PHASE_TIMEOUT_MS
     }
 
+
+    const newDefaultModel =
+      typeof (settingsPayload as any).defaultModel === 'string'
+        ? (settingsPayload as any).defaultModel.trim()
+        : existingAgentSettings.defaultModel
+
+    const newDefaultEffort =
+      typeof (settingsPayload as any).defaultEffort === 'string'
+        ? (settingsPayload as any).defaultEffort.trim()
+        : existingAgentSettings.defaultEffort
+
+    const mergedAgentSettings: Record<string, any> = {
+      timeoutMs,
+      phases: updatedPhases,
+    }
+    if (newDefaultModel !== undefined && newDefaultModel !== '') {
+      mergedAgentSettings.defaultModel = newDefaultModel
+    }
+    if (newDefaultEffort !== undefined && newDefaultEffort !== '') {
+      mergedAgentSettings.defaultEffort = newDefaultEffort
+    }
+
     const mergedSettings: HarnessSettingsMap = {
       ...existingSettings,
-      [agentKey]: {
-        timeoutMs,
-        phases: updatedPhases,
-      },
+      [agentKey]: mergedAgentSettings,
+    }
+
+    const diag = validateSettingsMap(mergedSettings)
+    if (!diag.valid) {
+      throw new HttpServerError(
+        400,
+        'INVALID_SETTINGS_SCHEMA',
+        `Settings validation failed: ${diag.errors.map((e) => e.message).join('; ')}`
+      )
     }
 
     AtomicSettingsWriter.write(settingsFilePath, mergedSettings)

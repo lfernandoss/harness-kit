@@ -130,4 +130,65 @@ describe('T28 — HarnessSettings', () => {
       rmSync(tmpDir, { recursive: true, force: true })
     }
   })
+
+  it('TC-HS-08: resolve falls back to runner defaultModel and defaultEffort when phase does not override', async () => {
+    const { HarnessSettings } = await import('../../src/settings/HarnessSettings.js')
+    const customMap = {
+      'antigravity': {
+        defaultModel: 'gemini-3.7-flash',
+        defaultEffort: 'medium',
+        phases: {
+          'bootstrap': {},
+          'planning': { model: 'gemini-3.7-pro', effort: 'high' },
+          'implementation': { model: '' }
+        }
+      }
+    }
+    const settings = new (HarnessSettings as any)(customMap)
+
+    // Falls back to runner default
+    expect(settings.resolve('antigravity', 'bootstrap')).toEqual({
+      model: 'gemini-3.7-flash',
+      effort: 'medium'
+    })
+
+    // Phase override takes precedence
+    expect(settings.resolve('antigravity', 'planning')).toEqual({
+      model: 'gemini-3.7-pro',
+      effort: 'high'
+    })
+
+    // Empty string falls back to runner default
+    expect(settings.resolve('antigravity', 'implementation')).toEqual({
+      model: 'gemini-3.7-flash',
+      effort: 'medium'
+    })
+  })
+
+  it('TC-HS-09: mergeMaps preserves runner defaultModel and defaultEffort', async () => {
+    const { HarnessSettings } = await import('../../src/settings/HarnessSettings.js')
+    const base = {
+      'cursor': {
+        defaultModel: 'gpt-5.6-sol',
+        defaultEffort: 'low',
+        timeoutMs: 1000
+      }
+    }
+    const override = {
+      'cursor': {
+        timeoutMs: 2000,
+        phases: {
+          'planning': { model: 'gpt-5.6-luna' }
+        }
+      }
+    }
+
+    const merged = (HarnessSettings as any).mergeMaps(base, override)
+
+    expect(merged['cursor'].defaultModel).toBe('gpt-5.6-sol')
+    expect(merged['cursor'].defaultEffort).toBe('low')
+    expect(merged['cursor'].timeoutMs).toBe(2000)
+    expect(merged['cursor'].phases['planning'].model).toBe('gpt-5.6-luna')
+  })
 })
+

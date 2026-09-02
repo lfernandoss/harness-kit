@@ -85,8 +85,18 @@ export class HarnessSettings {
 
   resolve(runnerType: string, phaseKey: string): PhaseSettings {
     const runner = this.settings[runnerType]
-    if (!runner || !runner.phases) return {}
-    return runner.phases[phaseKey] ?? {}
+    if (!runner) return {}
+
+    const phase = runner.phases?.[phaseKey] ?? {}
+    const model = (phase.model !== undefined && phase.model !== '') ? phase.model : (runner.defaultModel || undefined)
+    const effort = (phase.effort !== undefined && phase.effort !== '') ? phase.effort : (runner.defaultEffort || undefined)
+    const timeoutMs = phase.timeoutMs !== undefined ? phase.timeoutMs : undefined
+
+    const result: PhaseSettings = {}
+    if (model !== undefined) result.model = model
+    if (effort !== undefined) result.effort = effort
+    if (timeoutMs !== undefined) result.timeoutMs = timeoutMs
+    return result
   }
 
   getTimeoutMs(runnerType: string, phaseKey?: string): number | undefined {
@@ -127,6 +137,12 @@ export class HarnessSettings {
       }
 
       result[runner] = {
+        defaultModel: overrideRunner.defaultModel !== undefined && overrideRunner.defaultModel !== ''
+          ? overrideRunner.defaultModel
+          : baseRunner.defaultModel,
+        defaultEffort: overrideRunner.defaultEffort !== undefined && overrideRunner.defaultEffort !== ''
+          ? overrideRunner.defaultEffort
+          : baseRunner.defaultEffort,
         timeoutMs: overrideRunner.timeoutMs !== undefined ? overrideRunner.timeoutMs : baseRunner.timeoutMs,
         phases: mergedPhases
       }
