@@ -132,7 +132,7 @@ export async function cmdSettings(cwd: string, args: string[] = []): Promise<voi
           settings: validated
         }))
       } else {
-        console.log(`${AnsiHelpers.green('✓')} Updated settings for ${AnsiHelpers.bold(runner)} at ${settingsPath}`)
+        console.log(`${AnsiHelpers.green('✓')} Updated settings for ${AnsiHelpers.cyan(runner)} at ${settingsPath}`)
       }
     } catch (e: any) {
       if (isJson) {
@@ -301,13 +301,13 @@ export async function cmdSettings(cwd: string, args: string[] = []): Promise<voi
         { name: 'high', value: 'high' },
         { name: 'xhigh', value: 'xhigh' }
       ],
-      default: existingRunner.defaultEffort || ''
+      default: (existingRunner.defaultEffort || '') as any
     })
 
     const updatedRunner: RunnerSettings = {
       ...existingRunner,
       defaultModel: modelInput.trim() ? modelInput.trim() : existingRunner.defaultModel,
-      defaultEffort: effortInput ? effortInput : existingRunner.defaultEffort
+      defaultEffort: effortInput ? (effortInput as any) : existingRunner.defaultEffort
     }
 
     const updatedMap: HarnessSettingsMap = {
@@ -359,13 +359,13 @@ export async function cmdSettings(cwd: string, args: string[] = []): Promise<voi
         { name: 'high', value: 'high' },
         { name: 'xhigh', value: 'xhigh' }
       ],
-      default: existingPhase.effort || ''
+      default: (existingPhase.effort || '') as any
     })
 
     const updatedPhase: PhaseSettings = {
       ...existingPhase,
       model: phaseModel.trim() ? phaseModel.trim() : undefined,
-      effort: phaseEffort ? phaseEffort : undefined
+      effort: phaseEffort ? (phaseEffort as any) : undefined
     }
 
     const updatedRunner: RunnerSettings = {
