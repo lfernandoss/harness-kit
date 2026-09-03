@@ -1,5 +1,13 @@
 import { HttpServer } from './dist/server/HttpServer.js';
 
+process.on('uncaughtException', (err) => {
+  console.error('[HRNS Uncaught Exception]', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[HRNS Unhandled Rejection]', reason);
+});
+
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const host = process.env.HOST ?? '127.0.0.1';
 
@@ -14,3 +22,7 @@ console.log(`📊 Reports & Cost:        http://${host}:${actualPort}/#/reports`
 console.log(`🧬 Diagnostics & Pareto:  http://${host}:${actualPort}/#/diagnose`);
 console.log(`📖 API Documentation:     http://${host}:${actualPort}/docs`);
 console.log(`=============================================================\n`);
+
+// Keep event loop alive
+setInterval(() => {}, 1000 * 60 * 60);
+

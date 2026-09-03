@@ -1,6 +1,9 @@
-export class WebUiRenderer {
-  static getWebUiHtml(initialPath: string = '/'): string {
-    return `<!DOCTYPE html>
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WebUiRenderer = void 0;
+class WebUiRenderer {
+    static getWebUiHtml(initialPath = '/') {
+        return `<!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8">
@@ -776,7 +779,103 @@ export class WebUiRenderer {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
-  </style>
+  
+        /* Cybernetic Mission Control & Autonomous Agent HUD Styles */
+    .hud-container { position: relative; width: 100%; }
+    .hud-panel {
+      background: #090d19;
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 14px;
+      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+    .hud-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 13px 13px 0 0;
+    }
+    .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .hud-pill-cyan {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+    }
+    .hud-pill-emerald {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+    .hud-pill-amber {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+    .hud-pill-rose {
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #fb7185;
+    }
+    .agent-matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .agent-card {
+      background: #0b1122;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 18px;
+      position: relative;
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .agent-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: #0f1830;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.5);
+    }
+    .agent-card.active {
+      border-color: #38bdf8;
+      background: #111d3a;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+    }
+    .agent-tag {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+    }
+    @media (max-width: 960px) {
+      .onboarding-grid-2col {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+</style>
+
+  <!-- Onboarding 3D & Motion CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 </head>
 <body>
   <div class="app-shell">
@@ -813,6 +912,13 @@ export class WebUiRenderer {
     <div class="app-body">
       <!-- Sidebar -->
       <aside class="app-sidebar">
+
+        <div class="sidebar-category" style="color: #38bdf8;">✨ Comece Aqui</div>
+        <a href="#/onboarding" class="nav-link" data-route="onboarding" style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; margin-bottom: 8px;">
+          <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+          <span style="font-weight: 700; color: #38bdf8;">Mission Control (Swarm)</span>
+        </a>
+
         <div class="sidebar-category">Core Engine</div>
         <a href="#/run" class="nav-link active" data-route="run">
           <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
@@ -1272,6 +1378,286 @@ Sessions (real work)
             </div>
           </div>
         </section>
+      
+                <!-- VIEW 0: AUTONOMOUS AGENT MISSION CONTROL & HARNESS ONBOARDING -->
+        <section id="view-onboarding" class="view-section">
+          <!-- Cybernetic Hero Deck -->
+          <div class="hud-panel" style="padding: 28px 32px; margin-bottom: 24px; border-top: 3px solid #38bdf8;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+              <div style="max-width: 840px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                  <span class="hud-pill hud-pill-cyan">● MISSION CONTROL</span>
+                  <span class="hud-pill hud-pill-emerald">HARNESS INTEGRITY: 98.7%</span>
+                  <span class="hud-pill hud-pill-amber">SANDBOX: GIT WORKTREE ISOLATION</span>
+                  <span class="hud-pill hud-pill-rose">GATE: DUAL ADVERSARIAL AUDIT</span>
+                </div>
+                <h1 style="font-size: 28px; font-weight: 800; color: #f8fafc; margin: 0 0 10px; line-height: 1.25; font-family: 'Plus Jakarta Sans', sans-serif;">
+                  HarnessKit: Scaffolding Determinístico para Agentes Autônomos
+                </h1>
+                <p style="font-size: 14.5px; color: #94a3b8; line-height: 1.6; margin: 0 0 16px;">
+                  Modelos de IA são motores probabilísticos sujeitos a alucinações, drift de contexto e quebra de contratos. O <strong>HarnessKit</strong> atua como um arnês de precisão industrial: ele enclausura os LLMs em <strong>Git Worktrees efêmeros</strong>, <strong>Memória Viva em Grafo</strong>, <strong>Ciclo de Ferro TDD</strong> e <strong>Portões Adversariais de Decisão</strong>.
+                </p>
+                <div style="background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 12px 18px; display: inline-flex; align-items: center; gap: 14px;">
+                  <span style="font-size: 18px;">📐</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 600; color: #38bdf8;">
+                    Reliable Autonomous System = Probabilistic LLM + Deterministic Harness + Human Authority
+                  </span>
+                </div>
+              </div>
+
+              <!-- Quick Control Actions -->
+              <div style="display: flex; flex-direction: column; gap: 10px; min-width: 220px;">
+                <button type="button" class="btn btn-primary" onclick="simulateAgenticCycle()" style="padding: 12px 18px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; background: #0284c7; border-color: #38bdf8;">
+                  <span>▶ Disparar Simulação Swarm</span>
+                </button>
+                <button type="button" class="btn btn-outline" onclick="copyOnboardingCommand('npx harness-kit init')" style="padding: 10px 14px; font-size: 12px; font-family: 'JetBrains Mono', monospace; text-align: left;">
+                  <span>$ npx harness-kit init 📋</span>
+                </button>
+                <button type="button" class="btn btn-outline" onclick="navigateTo('run')" style="padding: 10px 14px; font-size: 12px; text-align: left;">
+                  <span>Ir para Orchestration Hub ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: 3D Swarm Constellation + Technical Blueprint -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;" class="onboarding-grid-2col">
+            
+            <!-- Left: 3D Multi-Agent Swarm Topology (img2threejs) -->
+            <div class="hud-panel" style="display: flex; flex-direction: column; min-height: 440px;">
+              <div class="hud-panel-header">
+                <div>
+                  <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Topologia 3D (img2threejs)</div>
+                  <div style="font-size: 15px; font-weight: 700; color: #f8fafc;">Constelação Multiagente em Tempo Real</div>
+                </div>
+                <span class="hud-pill hud-pill-cyan">6 Agentes Especialistas + CTO Hub</span>
+              </div>
+              
+              <div style="padding: 12px 18px; font-size: 12px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between;">
+                <span>Arraste o mouse para orbitar a topologia e inspecionar os canais de telemetria.</span>
+                <span id="onbSelectedAgentLabel" style="color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-weight: 700;">● Core: autonomous-orchestrator</span>
+              </div>
+              
+              <div id="onboarding-canvas-container" style="flex: 1; width: 100%; min-height: 320px; position: relative; background: #040813;">
+                <canvas id="onboarding-three-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: High-Precision Blueprint Schematic (Nano Banana) -->
+            <div class="hud-panel" style="display: flex; flex-direction: column; min-height: 440px;">
+              <div class="hud-panel-header">
+                <div>
+                  <div style="font-size: 10px; font-weight: 800; color: #f59e0b; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Esquema de Engenharia (Nano Banana)</div>
+                  <div style="font-size: 15px; font-weight: 700; color: #f8fafc;">Fluxo Agêntico Orquestrado & Comunicação (3D)</div>
+                </div>
+                <span class="hud-pill hud-pill-amber">CAD Architectural View</span>
+              </div>
+              
+              <div style="padding: 12px 18px; font-size: 12px; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                Protocolos de mensagens ativas: GIVEN_WHEN_THEN → RED_GREEN_TDD → ADVERSARIAL_PAYLOAD → TECH_LEAD_VERDICT.
+              </div>
+
+              <div style="flex: 1; width: 100%; min-height: 320px; position: relative; overflow: hidden; background: #060b17;">
+                <img src="/assets/orchestrated-agent-flow.jpg" alt="Orchestrated Autonomous Agentic Workflow & Inter-Agent Communication" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Section: The 8 Specialized Agents & Skills Matrix -->
+          <div class="hud-panel" style="padding: 24px; margin-bottom: 24px;">
+            <div style="margin-bottom: 18px;">
+              <div style="font-size: 10px; font-weight: 800; color: #38bdf8; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Arquitetura Especializada</div>
+              <h3 style="font-size: 20px; font-weight: 800; color: #f8fafc; margin: 2px 0 6px;">Matriz de Agentes & Skills do HarnessKit</h3>
+              <p style="font-size: 13px; color: #94a3b8; margin: 0;">
+                O HarnessKit não utiliza um modelo genérico "faz-tudo". Cada agente possui escopo delimitado, ferramentas estritas e contratos invariantes.
+              </p>
+            </div>
+
+            <div class="agent-matrix-grid">
+              
+              <!-- Agent 1: Orchestrator -->
+              <div class="agent-card" onclick="highlightSwarmNode(0, 'autonomous-orchestrator')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-cyan">👑 CORE</span>
+                  <span class="agent-tag">FSM & Concurrency</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">autonomous-orchestrator / cto</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Gerencia a máquina de estados finitos (FSM), isola o Git Worktree dedicado, coordena bloqueios atômicos de workspace e governa a transição de fases.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">Git Worktree JIT</span>
+                  <span class="agent-tag">ProcessTreeManager</span>
+                </div>
+              </div>
+
+              <!-- Agent 2: Living Memory -->
+              <div class="agent-card" onclick="highlightSwarmNode(1, 'project-memory')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-cyan">🧠 MEMÓRIA</span>
+                  <span class="agent-tag">Graph Indexer</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">project-memory</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Mantém a documentação viva em <code>docs/</code> com ADRs concisos (<8k caracteres) e mapas de dependência em grafo de 1 salto para busca contextual ultra-rápida.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">docs/.graph.json</span>
+                  <span class="agent-tag">docs/.digest.md</span>
+                </div>
+              </div>
+
+              <!-- Agent 3: DDD Refinement -->
+              <div class="agent-card" onclick="highlightSwarmNode(2, 'scope-refinement')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-cyan">📐 ESPECIFICAÇÃO</span>
+                  <span class="agent-tag">DDD Refiner</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">scope-refinement</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Decompõe a demanda de negócio em 4 etapas formais de Domain-Driven Design, culminando em especificações executáveis em formato <strong>Given-When-Then</strong>.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">Problem Space</span>
+                  <span class="agent-tag">Given-When-Then</span>
+                </div>
+              </div>
+
+              <!-- Agent 4: TDD Engine -->
+              <div class="agent-card" onclick="highlightSwarmNode(3, 'tdd-orchestrator')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-emerald">⚙️ DESENVOLVIMENTO</span>
+                  <span class="agent-tag">Iron TDD Loop</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">tdd-orchestrator / backend</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Aplica a <strong>Lei de Ferro do TDD</strong>: nenhum código é escrito sem teste prévio falhando. Converte Given-When-Then em testes automatizados e itera até a suíte ficar verde.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">RED ❌</span>
+                  <span class="agent-tag">GREEN ✅</span>
+                  <span class="agent-tag">REFACTOR ♻️</span>
+                </div>
+              </div>
+
+              <!-- Agent 5: Debugging -->
+              <div class="agent-card" onclick="highlightSwarmNode(4, 'developer-debugging')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-amber">🔍 FORENSE</span>
+                  <span class="agent-tag">5 Whys Engine</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">developer-debugging</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Investigação orientada a evidências. Quando um teste falha inesperadamente, executa a análise de causa raiz por 5 Porquês antes de permitir qualquer modificação no código.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">Root Cause Analysis</span>
+                  <span class="agent-tag">Evidence-Driven</span>
+                </div>
+              </div>
+
+              <!-- Agent 6: Adversarial QA -->
+              <div class="agent-card" onclick="highlightSwarmNode(5, 'adversarial-qa')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-rose">🛡️ RED TEAM</span>
+                  <span class="agent-tag">Pen-Testing QA</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">adversarial-qa</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Tenta quebrar o código propositalmente com payloads extremos de limites, ataques de concorrência e injeções maliciosas não contempladas no escopo original.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">Boundary Payloads</span>
+                  <span class="agent-tag">Stress Gates</span>
+                </div>
+              </div>
+
+              <!-- Agent 7: Grumpy Tech Lead -->
+              <div class="agent-card" onclick="highlightSwarmNode(6, 'the-grumpy-tech-lead')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-amber">🧐 AUDITORIA</span>
+                  <span class="agent-tag">Architecture Gate</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">the-grumpy-tech-lead</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Arquiteto sênior implacável. Avalia riscos sistêmicos, violações de SOLID/DRY, dependências cíclicas, queries N+1 e vazamento de recursos antes da aprovação.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">Score >= 0.85</span>
+                  <span class="agent-tag">Anti N+1 Queries</span>
+                </div>
+              </div>
+
+              <!-- Agent 8: Meta-Harness Loop -->
+              <div class="agent-card" onclick="highlightSwarmNode(0, 'meta-harness')">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="hud-pill hud-pill-cyan">🧬 EVOLUÇÃO</span>
+                  <span class="agent-tag">Self-Optimization</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f8fafc; margin: 0 0 6px;">meta-harness + evaluator</h4>
+                <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0 0 10px;">
+                  Grava traces em <code>docs/harness-history/traces/</code>, calcula a Fronteira de Pareto (Custo vs Assertividade) e gera melhorias de prompt para as próprias skills.
+                </p>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <span class="agent-tag">Pareto Frontier</span>
+                  <span class="agent-tag">Candidate Prompts</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Section: Live Swarm Simulation Console -->
+          <div class="hud-panel" style="padding: 24px; margin-bottom: 24px;" id="simulationBox">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="font-size: 16px; font-weight: 700; color: #f8fafc; margin: 0 0 4px;">Console de Telemetria do Swarm em Tempo Real</h3>
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Dispare um ciclo multiagente simulado (Tarefa: "Processamento de Pagamento com Idempotência").</p>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="simulateAgenticCycle()" id="btnStartSimulation" style="background: #0284c7; border-color: #38bdf8;">
+                ▶ Executar Pipeline Swarm Completo
+              </button>
+            </div>
+
+            <!-- Simulation Progress Bar -->
+            <div style="background: rgba(255,255,255,0.06); height: 6px; border-radius: 999px; overflow: hidden; margin-bottom: 14px;">
+              <div id="simProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #10b981, #f59e0b); transition: width 0.5s ease;"></div>
+            </div>
+
+            <!-- Simulation Terminal Stream -->
+            <div id="simTerminal" style="background: #050811; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #38bdf8; min-height: 150px; max-height: 220px; overflow-y: auto; line-height: 1.65;">
+              <span style="color: rgba(255,255,255,0.35);">// Sistema em prontidão. Clique em "Executar Pipeline Swarm Completo" para acionar os agentes...</span>
+            </div>
+          </div>
+
+          <!-- Section: Practical Guide (CLI Commands) -->
+          <div class="hud-panel" style="padding: 24px; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #f8fafc; margin: 0 0 12px;">Comandos Operacionais do HarnessKit</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              
+              <div style="background: #060a14; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+                <div style="font-weight: 700; font-size: 12.5px; color: #38bdf8; margin-bottom: 6px;">1. Inicializar Workspace</div>
+                <code style="display: block; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 6px; font-size: 11.5px; color: #7dd3fc; margin-bottom: 6px;">npx harness-kit init</code>
+                <p style="font-size: 11.5px; color: #94a3b8; margin: 0;">Varre a base e cria os ADRs e o grafo em <code>docs/</code>.</p>
+              </div>
+
+              <div style="background: #060a14; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+                <div style="font-weight: 700; font-size: 12.5px; color: #c084fc; margin-bottom: 6px;">2. Refinamento DDD</div>
+                <code style="display: block; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 6px; font-size: 11.5px; color: #e9d5ff; margin-bottom: 6px;">hrns refine "pagamento-idempotente"</code>
+                <p style="font-size: 11.5px; color: #94a3b8; margin: 0;">Gera cenários de teste Given-When-Then antes do código.</p>
+              </div>
+
+              <div style="background: #060a14; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px;">
+                <div style="font-weight: 700; font-size: 12.5px; color: #34d399; margin-bottom: 6px;">3. Execução do Swarm</div>
+                <code style="display: block; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 6px; font-size: 11.5px; color: #a7f3d0; margin-bottom: 6px;">hrns run --agent antigravity-cli</code>
+                <p style="font-size: 11.5px; color: #94a3b8; margin: 0;">Dispara o loop TDD com auditoria socrática e adversarial.</p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -1363,6 +1749,7 @@ Sessions (real work)
       const targetSection = document.getElementById(\`view-\${route}\`);
       if (targetSection) targetSection.classList.add('active');
 
+      if (route === 'onboarding') { setTimeout(initOnboardingThreeJs, 80); }
       if (route === 'diagnose') {
         refreshDiagnoseStatus();
       }
@@ -1379,6 +1766,10 @@ Sessions (real work)
         if (route) navigateTo(route);
       });
     });
+
+    // Auto-trigger navigation on initial load (defaults to onboarding if none set)
+    const initialHash = window.location.hash.replace('#/', '') || 'onboarding';
+    navigateTo(initialHash);
 
     // Theme Switcher
     const themeToggleBtn = document.getElementById('themeToggle');
@@ -2781,8 +3172,252 @@ Sessions (real work)
     }
 
     setInterval(checkHealth, 10000);
+  
+            // --- CYBERNETIC MULTI-AGENT ORCHESTRATION & COMMUNICATION (img2threejs + Three.js) ---
+    var onbScene, onbCamera, onbRenderer, onbOrchestratorMesh, onbAgentNodes = [], onbPackets = [];
+    var onbTargetRotX = 0, onbTargetRotY = 0;
+    var onbInitialized = false;
+
+    var swarmStations = [
+      { name: 'Cartographer (Memory)', agent: 'project-memory', color: 0x38bdf8, pos: [-3.0, 1.5, 0], protocol: 'AST_GRAPH_INDEX' },
+      { name: 'Architect (DDD)', agent: 'scope-refinement', color: 0xc084fc, pos: [-3.0, -1.5, 0], protocol: 'GIVEN_WHEN_THEN_SPEC' },
+      { name: 'Builder (TDD Loop)', agent: 'tdd-orchestrator', color: 0x10b981, pos: [0, -2.6, 0.4], protocol: 'RED_GREEN_TDD_CYCLE' },
+      { name: 'Auditor (Tech Lead & QA)', agent: 'the-grumpy-tech-lead', color: 0xf59e0b, pos: [3.0, -1.5, 0], protocol: 'TECH_LEAD_VERDICT_0.98' },
+      { name: 'Genetic Optimizer', agent: 'meta-harness', color: 0x0ea5e9, pos: [3.0, 1.5, 0], protocol: 'PARETO_OPTIMIZATION' }
+    ];
+
+    function initOnboardingThreeJs() {
+      if (onbInitialized) return;
+      var container = document.getElementById('onboarding-canvas-container');
+      var canvas = document.getElementById('onboarding-three-canvas');
+      if (!container || !canvas || typeof THREE === 'undefined') return;
+
+      var w = container.clientWidth || 400;
+      var h = container.clientHeight || 320;
+
+      onbScene = new THREE.Scene();
+      onbCamera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+      onbCamera.position.set(0, 0, 7.5);
+
+      onbRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      onbRenderer.setSize(w, h);
+      onbRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      var ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      onbScene.add(ambientLight);
+
+      // Central Hub: Orchestrator Core (FSM Engine)
+      var hubGroup = new THREE.Group();
+      
+      // Outer Cylindrical Station Base
+      var baseGeo = new THREE.CylinderGeometry(0.85, 0.95, 0.4, 32);
+      var baseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9, roughness: 0.2 });
+      var baseMesh = new THREE.Mesh(baseGeo, baseMat);
+      hubGroup.add(baseMesh);
+
+      // Core Hologram Crystal
+      var cryGeo = new THREE.OctahedronGeometry(0.5, 0);
+      var cryMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, wireframe: true, metalness: 0.9 });
+      var cryMesh = new THREE.Mesh(cryGeo, cryMat);
+      cryMesh.position.y = 0.5;
+      hubGroup.add(cryMesh);
+
+      // Rotating FSM Energy Rings
+      var r1Geo = new THREE.RingGeometry(1.1, 1.15, 32);
+      var r1Mat = new THREE.MeshBasicMaterial({ color: 0x0284c7, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+      var r1 = new THREE.Mesh(r1Geo, r1Mat);
+      r1.rotation.x = Math.PI / 2;
+      hubGroup.add(r1);
+
+      onbScene.add(hubGroup);
+      onbOrchestratorMesh = hubGroup;
+
+      // Create Agent Workstations and Laser Data Highways
+      onbAgentNodes = [];
+      onbPackets = [];
+
+      for (var i = 0; i < swarmStations.length; i++) {
+        var st = swarmStations[i];
+        var sGroup = new THREE.Group();
+
+        // Terminal Stand
+        var tBaseGeo = new THREE.BoxGeometry(0.7, 0.1, 0.5);
+        var tBaseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
+        var tBase = new THREE.Mesh(tBaseGeo, tBaseMat);
+        sGroup.add(tBase);
+
+        // Holographic Monitor Screen
+        var scrGeo = new THREE.BoxGeometry(0.6, 0.4, 0.04);
+        var scrMat = new THREE.MeshStandardMaterial({ color: st.color, roughness: 0.1, metalness: 0.9 });
+        var scr = new THREE.Mesh(scrGeo, scrMat);
+        scr.position.set(0, 0.3, 0);
+        sGroup.add(scr);
+
+        // Halo Beacon
+        var bGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        var bMat = new THREE.MeshBasicMaterial({ color: st.color });
+        var beacon = new THREE.Mesh(bGeo, bMat);
+        beacon.position.set(0, 0.65, 0);
+        sGroup.add(beacon);
+
+        sGroup.position.set(st.pos[0], st.pos[1], st.pos[2]);
+        sGroup.userData = { station: st };
+        onbScene.add(sGroup);
+        onbAgentNodes.push(sGroup);
+
+        // Laser Data Highway (Connecting Track to Central Orchestrator Hub)
+        var highwayCurve = new THREE.LineCurve3(
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(st.pos[0], st.pos[1], st.pos[2])
+        );
+        var tubeGeo = new THREE.TubeGeometry(highwayCurve, 20, 0.025, 8, false);
+        var tubeMat = new THREE.MeshBasicMaterial({ color: st.color, transparent: true, opacity: 0.35 });
+        var tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+        onbScene.add(tubeMesh);
+
+        // Active Moving Message Packet
+        var pktGeo = new THREE.BoxGeometry(0.18, 0.12, 0.08);
+        var pktMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        var pktMesh = new THREE.Mesh(pktGeo, pktMat);
+        onbScene.add(pktMesh);
+
+        onbPackets.push({
+          mesh: pktMesh,
+          start: new THREE.Vector3(0, 0.2, 0),
+          end: new THREE.Vector3(st.pos[0], st.pos[1] + 0.3, st.pos[2]),
+          progress: i * 0.2,
+          speed: 0.008 + (i * 0.002),
+          color: st.color
+        });
+      }
+
+      // Background Cybernetic Grid Particles
+      var pCount = 140;
+      var pGeo = new THREE.BufferGeometry();
+      var pPos = new Float32Array(pCount * 3);
+      for (var p = 0; p < pCount * 3; p += 3) {
+        pPos[p] = (Math.random() - 0.5) * 14;
+        pPos[p + 1] = (Math.random() - 0.5) * 12;
+        pPos[p + 2] = (Math.random() - 0.5) * 6 - 2;
+      }
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      var pMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.035, transparent: true, opacity: 0.4 });
+      onbScene.add(new THREE.Points(pGeo, pMat));
+
+      container.addEventListener('mousemove', function(e) {
+        var rect = container.getBoundingClientRect();
+        var x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        var y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        onbTargetRotY = x * 0.45;
+        onbTargetRotX = y * 0.35;
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Rotate Orchestrator Crystal and Rings
+        if (onbOrchestratorMesh) {
+          onbOrchestratorMesh.rotation.y += 0.012;
+          if (onbOrchestratorMesh.children[1]) {
+            onbOrchestratorMesh.children[1].rotation.x += 0.02;
+            onbOrchestratorMesh.children[1].rotation.z += 0.015;
+          }
+        }
+
+        // Animate Traveling Message Packets between Orchestrator and Agent Workstations
+        for (var k = 0; k < onbPackets.length; k++) {
+          var pkt = onbPackets[k];
+          pkt.progress += pkt.speed;
+          if (pkt.progress > 1) pkt.progress = 0;
+
+          // Ping pong or unidirectional pulse
+          var alpha = pkt.progress;
+          pkt.mesh.position.lerpVectors(pkt.start, pkt.end, alpha);
+          pkt.mesh.rotation.y += 0.04;
+        }
+
+        // Subtle Mouse Parallax
+        onbScene.rotation.y += (onbTargetRotY - onbScene.rotation.y) * 0.05;
+        onbScene.rotation.x += (onbTargetRotX - onbScene.rotation.x) * 0.05;
+
+        onbRenderer.render(onbScene, onbCamera);
+      }
+      animate();
+      onbInitialized = true;
+    }
+
+    function highlightSwarmNode(idx, agentName) {
+      var label = document.getElementById('onbSelectedAgentLabel');
+      if (label) {
+        label.textContent = '● Inspecionando: ' + agentName;
+      }
+      document.querySelectorAll('.agent-card').forEach(function(c) { c.classList.remove('active'); });
+      if (typeof event !== 'undefined' && event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+      if (onbAgentNodes && onbAgentNodes[idx]) {
+        var targetNode = onbAgentNodes[idx];
+        if (typeof gsap !== 'undefined') {
+          gsap.fromTo(targetNode.scale, { x: 1.5, y: 1.5, z: 1.5 }, { x: 1, y: 1, z: 1, duration: 0.8, ease: 'back.out(2)' });
+        }
+      }
+    }
+
+    // --- CYBERNETIC MULTI-AGENT SWARM SIMULATOR (gsap + motion) ---
+    var isSimulating = false;
+    async function simulateAgenticCycle() {
+      if (isSimulating) return;
+      isSimulating = true;
+      var term = document.getElementById('simTerminal');
+      var bar = document.getElementById('simProgressBar');
+      var btn = document.getElementById('btnStartSimulation');
+      if (btn) btn.disabled = true;
+
+      term.innerHTML = '';
+      function log(agent, msg, color) {
+        if (!color) color = '#38bdf8';
+        var time = new Date().toLocaleTimeString();
+        term.innerHTML += '<div style="margin-bottom: 4px; color: #f1f5f9;"><span style="color: rgba(255,255,255,0.3); font-size: 11px;">[' + time + ']</span> <strong style="color: ' + color + ';">[' + agent + ']</strong> ' + msg + '</div>';
+        term.scrollTop = term.scrollHeight;
+      }
+
+      var steps = [
+        { agent: 'ORCHESTRATOR', pct: 15, color: '#38bdf8', msg: 'Isolando workspace em Git Worktree efêmero: .worktrees/job-pix-8821. Mutex garantido.' },
+        { agent: 'PROJECT-MEMORY', pct: 30, color: '#38bdf8', msg: 'Varrendo docs/.graph.json. Contexto carregado: ADR-004 (Política de Idempotência de Pagamentos).' },
+        { agent: 'SCOPE-REFINEMENT', pct: 45, color: '#c084fc', msg: 'DDD Refinement concluído. 3 cenários executáveis Given-When-Then gerados para chave de idempotência.' },
+        { agent: 'TDD-ENGINE', pct: 65, color: '#10b981', msg: 'Ciclo TDD executado: tests/PaymentIdempotency.test.ts. RED ❌ (falha esperada) -> GREEN ✅ (lógica mínima) -> REFACTOR ♻️.' },
+        { agent: 'ADVERSARIAL-QA', pct: 80, color: '#f43f5e', msg: 'Disparando 20 requisições simultâneas em 5ms. Teste de Race Condition: 0 pagamentos duplicados detectados.' },
+        { agent: 'GRUMPY-TECH-LEAD', pct: 92, color: '#f59e0b', msg: 'Auditoria de Arquitetura: Zero queries N+1, isolamento de transação ACID verificado. Veredito: APROVADO (Score: 0.98 / 1.00).' },
+        { agent: 'META-HARNESS', pct: 100, color: '#38bdf8', msg: 'Trace gravado em docs/harness-history/traces/. Consumo: 1.2k tokens ($0.0024). Pareto Frontier atualizado. Pipeline concluído!' }
+      ];
+
+      for (var j = 0; j < steps.length; j++) {
+        var s = steps[j];
+        if (bar) bar.style.width = s.pct + '%';
+        log(s.agent, s.msg, s.color);
+        await new Promise(function(r) { setTimeout(r, 1000); });
+      }
+
+      if (typeof confetti !== 'undefined') {
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
+      }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Disparar Nova Simulação';
+      }
+      isSimulating = false;
+    }
+
+    function copyOnboardingCommand(cmd) {
+      navigator.clipboard.writeText(cmd);
+      alert('Comando copiado para a área de transferência: ' + cmd);
+    }
+
   </script>
 </body>
 </html>`;
-  }
+    }
 }
+exports.WebUiRenderer = WebUiRenderer;
+//# sourceMappingURL=WebUiRenderer.js.map

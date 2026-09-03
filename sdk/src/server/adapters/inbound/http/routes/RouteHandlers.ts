@@ -508,6 +508,7 @@ export class RouteHandlers {
         pathname === '/reports' ||
         pathname === '/diagnose' ||
         pathname === '/candidates' ||
+        pathname === '/onboarding' ||
         pathname === '/init'
       )) {
         const html = WebUiRenderer.getWebUiHtml(pathname)
@@ -517,6 +518,25 @@ export class RouteHandlers {
         })
         res.end(html)
         return
+      }
+
+      if (method === 'GET' && pathname.startsWith('/assets/')) {
+        const fs = require('node:fs')
+        const path = require('node:path')
+        const assetName = pathname.replace('/assets/', '')
+        const assetPath = path.join(__dirname, '../../../../../../public', assetName)
+        if (fs.existsSync(assetPath)) {
+          const content = fs.readFileSync(assetPath)
+          const ext = path.extname(assetPath).toLowerCase()
+          const contentType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.png' ? 'image/png' : 'application/octet-stream'
+          res.writeHead(200, {
+            'Content-Type': contentType,
+            'Content-Length': content.length,
+            'Cache-Control': 'public, max-age=86400',
+          })
+          res.end(content)
+          return
+        }
       }
 
       if (method === 'GET' && pathname === '/docs') {
